@@ -70,29 +70,37 @@
           <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Dodaj odcinek</span>
         </button>
 
-        <!-- Dropdown / More menu -->
-        <div class="relative group">
-          <button class="p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all text-sm">
-            <i class="fa-solid fa-ellipsis-vertical"></i>
+        <!-- Dropdown / More menu (Fixed Click-to-Toggle) -->
+        <div class="relative" id="more-menu-container">
+          <button id="more-menu-btn" type="button" onclick="toggleMoreMenu(event)" class="p-2 rounded-xl text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition-all text-sm flex items-center justify-center w-9 h-9 border border-slate-200" title="Więcej opcji (Kopia zapasowa, Eksport, Import)">
+            <i class="fa-solid fa-ellipsis-vertical pointer-events-none"></i>
           </button>
-          <div class="absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 hidden group-hover:block z-50 text-xs">
-            <button onclick="openGDriveSettings()" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700">
-              <i class="fa-solid fa-gear text-slate-400"></i> Ustawienia Dysku Google
-            </button>
-            <button onclick="exportDataJSON()" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700">
-              <i class="fa-solid fa-download text-slate-400"></i> Eksportuj plik JSON na dysk
-            </button>
-            <button onclick="exportDataCSV()" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700">
-              <i class="fa-solid fa-file-csv text-slate-400"></i> Eksportuj do CSV (Excel)
-            </button>
-            <label class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 cursor-pointer">
-              <i class="fa-solid fa-upload text-slate-400"></i> Importuj kopię z JSON
-              <input type="file" accept=".json" class="hidden" onchange="importDataJSON(event)">
-            </label>
-            <div class="border-t border-slate-100 my-1"></div>
-            <button onclick="loadDemoData()" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-brand-600 font-medium">
-              <i class="fa-solid fa-wand-magic-sparkles"></i> Załaduj przykłady demo
-            </button>
+          <div id="more-menu-dropdown" class="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl py-2 hidden z-50 text-xs divide-y divide-slate-100">
+            <div class="py-1">
+              <button type="button" onclick="menuAction(openCategoryManager)" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-3 text-slate-700 font-medium transition-colors">
+                <i class="fa-solid fa-tags text-teal-600 w-4 text-center"></i> Zarządzaj kategoriami
+              </button>
+              <button type="button" onclick="menuAction(openGDriveSettings)" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-3 text-slate-700 font-medium transition-colors">
+                <i class="fa-solid fa-gear text-slate-400 w-4 text-center"></i> Ustawienia Dysku Google
+              </button>
+            </div>
+            <div class="py-1">
+              <button type="button" onclick="menuAction(exportDataJSON)" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-3 text-slate-700 font-medium transition-colors">
+                <i class="fa-solid fa-download text-emerald-600 w-4 text-center"></i> Eksportuj plik JSON na dysk
+              </button>
+              <button type="button" onclick="menuAction(exportDataCSV)" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-3 text-slate-700 font-medium transition-colors">
+                <i class="fa-solid fa-file-csv text-blue-600 w-4 text-center"></i> Eksportuj do CSV (Excel)
+              </button>
+              <label class="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-3 text-slate-700 font-medium cursor-pointer transition-colors">
+                <i class="fa-solid fa-upload text-amber-600 w-4 text-center"></i> Importuj kopię z JSON
+                <input type="file" accept=".json" class="hidden" onchange="menuAction(() => importDataJSON(event))">
+              </label>
+            </div>
+            <div class="py-1">
+              <button type="button" onclick="menuAction(loadDemoData)" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-3 text-brand-600 font-semibold transition-colors">
+                <i class="fa-solid fa-wand-magic-sparkles text-brand-500 w-4 text-center"></i> Załaduj przykłady demo
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -142,14 +150,14 @@
             <button onclick="filterFormat('shorts')" id="filter-fmt-sh" class="px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-800">9:16 Shorts</button>
           </div>
 
-          <select id="filter-category" onchange="renderEpisodesTable()" class="text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-700 py-1.5 px-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
-            <option value="all">Wszystkie kategorie</option>
-            <option value="Trauma i Relacje">Trauma i Relacje</option>
-            <option value="Układ Nerwowy i Somatyka">Układ Nerwowy i Somatyka</option>
-            <option value="Manipulacja i Narcyzm">Manipulacja i Narcyzm</option>
-            <option value="Lęki i Emocje">Lęki i Emocje</option>
-            <option value="Rozwój i Terapia">Rozwój i Terapia</option>
-          </select>
+          <div class="flex items-center gap-1">
+            <select id="filter-category" onchange="renderEpisodesTable()" class="text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-700 py-1.5 px-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="all">Wszystkie kategorie</option>
+            </select>
+            <button type="button" onclick="openCategoryManager()" title="Zarządzaj kategoriami (dodaj, edytuj, usuń)" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl border border-slate-200 transition-colors text-xs flex items-center justify-center w-8 h-8">
+              <i class="fa-solid fa-tags"></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -352,13 +360,14 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Kategoria psychologiczna</label>
-            <select id="form-category" class="w-full text-xs p-2 rounded-xl border border-slate-200">
-              <option value="Trauma i Relacje">Trauma i Relacje</option>
-              <option value="Układ Nerwowy i Somatyka">Układ Nerwowy i Somatyka</option>
-              <option value="Manipulacja i Narcyzm">Manipulacja i Narcyzm</option>
-              <option value="Lęki i Emocje">Lęki i Emocje</option>
-              <option value="Rozwój i Terapia">Rozwój i Terapia</option>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-bold text-slate-700">Kategoria psychologiczna</label>
+              <button type="button" onclick="openCategoryManager()" class="text-[11px] text-brand-600 hover:text-brand-800 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-gear text-[10px]"></i> Zarządzaj
+              </button>
+            </div>
+            <select id="form-category" class="w-full text-xs p-2 rounded-xl border border-slate-200 bg-white">
+              <!-- Rendered dynamically -->
             </select>
           </div>
         </div>
@@ -469,6 +478,59 @@
       </div>
     </div>
   </div>
+  <!-- =============================================================== -->
+  <!-- MODAL: MANAGE CATEGORIES (ADD, EDIT, DELETE)                   -->
+  <!-- =============================================================== -->
+  <div id="categories-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-teal-50/50">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center text-sm font-bold">
+            <i class="fa-solid fa-tags"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Zarządzaj Kategoriami</h3>
+            <p class="text-xs text-slate-500">Dodawaj nowe, zmieniaj nazwy lub usuwaj</p>
+          </div>
+        </div>
+        <button onclick="closeModal('categories-modal')" class="text-slate-400 hover:text-slate-700 text-lg">&times;</button>
+      </div>
+
+      <!-- Content -->
+      <div class="p-6 overflow-y-auto custom-scroll space-y-5 flex-1">
+        <!-- Add New Category Form -->
+        <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+          <label class="block text-xs font-bold text-slate-700">Dodaj nową kategorię:</label>
+          <div class="flex items-center gap-2">
+            <input type="text" id="new-category-input" placeholder="np. Psychologia Poznawcza, ADHD..." class="flex-1 text-xs p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 bg-white" onkeydown="if(event.key==='Enter') addNewCategory()">
+            <button type="button" onclick="addNewCategory()" class="px-3.5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 shrink-0">
+              <i class="fa-solid fa-plus"></i> Dodaj
+            </button>
+          </div>
+        </div>
+
+        <!-- Categories List -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Twoje kategorie (<span id="cat-count-badge">0</span>)</h4>
+            <span class="text-[10px] text-slate-400">Liczba przypisanych filmów</span>
+          </div>
+
+          <div id="categories-manager-list" class="space-y-2">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
+        <button type="button" onclick="closeModal('categories-modal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-colors">
+          Gotowe / Zamknij
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- JAVASCRIPT APPLICATION LOGIC -->
   <script>
@@ -476,9 +538,19 @@
        1. GLOBAL STATE & POLISH STOPWORDS
        ========================================================================== */
     const STORAGE_KEY = 'psycho_episodes_v3';
+    const CATEGORIES_KEY = 'psycho_categories_v1';
     const GDRIVE_CLIENT_ID_KEY = 'psycho_gdrive_client_id';
     const GDRIVE_FILE_NAME = 'baza_odcinkow_psychologia.json';
 
+    const DEFAULT_CATEGORIES = [
+      'Trauma i Relacje',
+      'Układ Nerwowy i Somatyka',
+      'Manipulacja i Narcyzm',
+      'Lęki i Emocje',
+      'Rozwój i Terapia'
+    ];
+
+    let categories = [...DEFAULT_CATEGORIES];
     let episodes = [];
     let currentFilterFormat = 'all';
     let gdriveToken = null;
@@ -499,7 +571,9 @@
        2. INITIALIZATION
        ========================================================================== */
     window.addEventListener('DOMContentLoaded', () => {
+      loadLocalCategories();
       loadLocalEpisodes();
+      renderCategorySelects();
       if (episodes.length === 0) {
         loadDemoData(false);
       } else {
@@ -667,14 +741,26 @@
           const contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${gdriveFileId}?alt=media`, {
             headers: { 'Authorization': `Bearer ${gdriveToken}` }
           });
-          const driveEpisodes = await contentRes.json();
-          if (Array.isArray(driveEpisodes) && driveEpisodes.length > 0) {
-            episodes = driveEpisodes;
+          const driveData = await contentRes.json();
+          let loadedEpisodes = [];
+          if (Array.isArray(driveData)) {
+            // Legacy format: array of episodes
+            loadedEpisodes = driveData;
+          } else if (driveData && typeof driveData === 'object' && Array.isArray(driveData.episodes)) {
+            loadedEpisodes = driveData.episodes;
+            if (Array.isArray(driveData.categories) && driveData.categories.length > 0) {
+              categories = driveData.categories;
+              localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+              renderCategorySelects();
+            }
+          }
+
+          if (loadedEpisodes.length > 0) {
+            episodes = loadedEpisodes;
             saveLocalEpisodes();
             renderEpisodesTable();
-            showSyncBanner(`Pobrano ${episodes.length} odcinków z Dysku Google!`, 3000);
+            showSyncBanner(`Pobrano ${episodes.length} odcinków i ${categories.length} kategorii z Dysku Google!`, 3000);
           } else {
-            // empty or malformed: push local data
             await syncToGoogleDrive();
           }
         } else {
@@ -703,7 +789,7 @@
         JSON.stringify(metadata) +
         delimiter +
         'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
-        JSON.stringify(episodes, null, 2) +
+        JSON.stringify({ episodes, categories }, null, 2) +
         closeDelim;
 
       const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
@@ -731,7 +817,7 @@
             'Authorization': `Bearer ${gdriveToken}`,
             'Content-Type': 'application/json; charset=UTF-8'
           },
-          body: JSON.stringify(episodes, null, 2)
+          body: JSON.stringify({ episodes, categories }, null, 2)
         });
         showSyncBanner('Baza zsynchronizowana z Dyskiem Google!', 2500);
       } catch (err) {
@@ -761,7 +847,230 @@
       hideSyncBanner();
     }
 
+    
     /* ==========================================================================
+       CATEGORY MANAGEMENT (ADD, EDIT, DELETE, REASSIGN)
+       ========================================================================== */
+    function loadLocalCategories() {
+      try {
+        const raw = localStorage.getItem(CATEGORIES_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            categories = parsed;
+          }
+        }
+      } catch (err) {
+        console.error('Błąd odczytu kategorii z localStorage:', err);
+      }
+    }
+
+    function saveLocalCategories() {
+      try {
+        localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+        renderCategorySelects();
+        if (gdriveToken && gdriveFileId) {
+          syncToGoogleDrive();
+        }
+      } catch (err) {
+        console.error('Błąd zapisu kategorii w localStorage:', err);
+      }
+    }
+
+    function renderCategorySelects() {
+      const filterSelect = document.getElementById('filter-category');
+      const formSelect = document.getElementById('form-category');
+      if (!filterSelect || !formSelect) return;
+
+      const currentFilterVal = filterSelect.value || 'all';
+      const currentFormVal = formSelect.value || (categories[0] || '');
+
+      // 1. Populate Filter select
+      let filterHtml = '<option value="all">Wszystkie kategorie</option>';
+      categories.forEach(cat => {
+        filterHtml += `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`;
+      });
+      filterSelect.innerHTML = filterHtml;
+      // Preserve selection if possible
+      if (currentFilterVal === 'all' || categories.includes(currentFilterVal)) {
+        filterSelect.value = currentFilterVal;
+      } else {
+        filterSelect.value = 'all';
+      }
+
+      // 2. Populate Form select
+      let formHtml = '';
+      categories.forEach(cat => {
+        formHtml += `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`;
+      });
+      formSelect.innerHTML = formHtml;
+      if (categories.includes(currentFormVal)) {
+        formSelect.value = currentFormVal;
+      } else if (categories.length > 0) {
+        formSelect.value = categories[0];
+      }
+    }
+
+    function openCategoryManager() {
+      renderCategoryManagerList();
+      openModal('categories-modal');
+    }
+
+    function renderCategoryManagerList() {
+      const listEl = document.getElementById('categories-manager-list');
+      const countBadge = document.getElementById('cat-count-badge');
+      if (!listEl) return;
+
+      countBadge.textContent = categories.length;
+      listEl.innerHTML = '';
+
+      if (categories.length === 0) {
+        listEl.innerHTML = '<p class="text-xs text-slate-400 py-3 text-center">Brak kategorii. Dodaj pierwszą powyżej.</p>';
+        return;
+      }
+
+      categories.forEach((cat, index) => {
+        const episodeCount = episodes.filter(e => e.category === cat).length;
+        const row = document.createElement('div');
+        row.className = 'p-3 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-3 shadow-xs';
+        row.id = `cat-row-${index}`;
+        row.innerHTML = `
+          <div class="flex items-center gap-2 flex-1 min-w-0" id="cat-view-${index}">
+            <span class="w-2 h-2 rounded-full bg-brand-500 shrink-0"></span>
+            <span class="text-xs font-bold text-slate-800 truncate" id="cat-label-${index}">${escapeHtml(cat)}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-semibold shrink-0">
+              ${episodeCount} ${episodeCount === 1 ? 'film' : 'filmów'}
+            </span>
+          </div>
+
+          <div class="hidden flex-1 items-center gap-2" id="cat-edit-${index}">
+            <input type="text" id="cat-input-${index}" value="${escapeHtml(cat)}" class="flex-1 text-xs p-1.5 rounded-lg border border-brand-500 focus:outline-none" onkeydown="if(event.key==='Enter') saveRenameCategory(${index}); if(event.key==='Escape') cancelRenameCategory(${index});">
+            <button onclick="saveRenameCategory(${index})" class="px-2 py-1 bg-brand-600 text-white rounded-lg text-xs font-bold hover:bg-brand-700">Zapisz</button>
+            <button onclick="cancelRenameCategory(${index})" class="px-2 py-1 bg-slate-200 text-slate-600 rounded-lg text-xs hover:bg-slate-300">Anuluj</button>
+          </div>
+
+          <div class="flex items-center gap-1 shrink-0" id="cat-actions-${index}">
+            <button onclick="startRenameCategory(${index})" title="Zmień nazwę kategorii" class="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition-colors text-xs">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button onclick="deleteCategory(${index})" title="Usuń kategorię" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors text-xs">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        `;
+        listEl.appendChild(row);
+      });
+    }
+
+    function addNewCategory() {
+      const input = document.getElementById('new-category-input');
+      const val = input.value.trim();
+      if (!val) {
+        alert('Wpisz nazwę nowej kategorii!');
+        return;
+      }
+      if (categories.some(c => c.toLowerCase() === val.toLowerCase())) {
+        alert('Taka kategoria już istnieje!');
+        return;
+      }
+      categories.push(val);
+      saveLocalCategories();
+      input.value = '';
+      renderCategoryManagerList();
+      renderEpisodesTable();
+    }
+
+    function startRenameCategory(index) {
+      document.getElementById(`cat-view-${index}`).classList.add('hidden');
+      document.getElementById(`cat-actions-${index}`).classList.add('hidden');
+      document.getElementById(`cat-edit-${index}`).classList.remove('hidden');
+      document.getElementById(`cat-edit-${index}`).classList.add('flex');
+      const inp = document.getElementById(`cat-input-${index}`);
+      inp.focus();
+      inp.select();
+    }
+
+    function cancelRenameCategory(index) {
+      document.getElementById(`cat-view-${index}`).classList.remove('hidden');
+      document.getElementById(`cat-actions-${index}`).classList.remove('hidden');
+      document.getElementById(`cat-edit-${index}`).classList.add('hidden');
+      document.getElementById(`cat-edit-${index}`).classList.remove('flex');
+    }
+
+    function saveRenameCategory(index) {
+      const inp = document.getElementById(`cat-input-${index}`);
+      const newName = inp.value.trim();
+      const oldName = categories[index];
+
+      if (!newName) {
+        alert('Nazwa kategorii nie może być pusta!');
+        return;
+      }
+      if (newName !== oldName && categories.some(c => c.toLowerCase() === newName.toLowerCase())) {
+        alert('Kategoria o takiej nazwie już istnieje!');
+        return;
+      }
+
+      // Rename in categories array
+      categories[index] = newName;
+
+      // Update all episodes that used old category
+      let updatedCount = 0;
+      episodes.forEach(ep => {
+        if (ep.category === oldName) {
+          ep.category = newName;
+          updatedCount++;
+        }
+      });
+
+      saveLocalCategories();
+      saveLocalEpisodes();
+      renderCategoryManagerList();
+      renderEpisodesTable();
+    }
+
+    function deleteCategory(index) {
+      const catToDelete = categories[index];
+      const assignedEpisodes = episodes.filter(e => e.category === catToDelete);
+
+      let confirmMsg = `Czy na pewno chcesz usunąć kategorię „${catToDelete}”?`;
+      if (assignedEpisodes.length > 0) {
+        confirmMsg = `Uwaga: Do kategorii „${catToDelete}” przypisanych jest ${assignedEpisodes.length} filmów!\n\nCzy chcesz ją usunąć i przenieść te filmy do kategorii „Ogólna”?`;
+      }
+
+      if (!confirm(confirmMsg)) return;
+
+      // Remove category
+      categories.splice(index, 1);
+      if (categories.length === 0) {
+        categories.push('Ogólna');
+      }
+
+      // Reassign affected episodes
+      const fallbackCat = categories[0] || 'Ogólna';
+      episodes.forEach(ep => {
+        if (ep.category === catToDelete) {
+          ep.category = fallbackCat;
+        }
+      });
+
+      saveLocalCategories();
+      saveLocalEpisodes();
+      renderCategoryManagerList();
+      renderEpisodesTable();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+/* ==========================================================================
        4. SUBTITLE PARSER & CLEANER (.SRT and .ASS / .SSA)
        ========================================================================== */
     function cleanSubtitles(rawText) {
@@ -1326,7 +1635,13 @@
        8. BACKUP, EXPORT & DEMO DATA
        ========================================================================== */
     function exportDataJSON() {
-      const blob = new Blob([JSON.stringify(episodes, null, 2)], { type: 'application/json' });
+      const backupData = {
+        version: '3.0',
+        exportedAt: new Date().toISOString(),
+        categories: categories,
+        episodes: episodes
+      };
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -1364,12 +1679,29 @@
       reader.onload = function(e) {
         try {
           const parsed = JSON.parse(e.target.result);
+          let importedEpisodes = null;
+          let importedCategories = null;
+
           if (Array.isArray(parsed)) {
-            if (confirm(`Wczytano ${parsed.length} odcinków z pliku. Czy chcesz zastąpić bieżącą bazę?`)) {
-              episodes = parsed;
+            importedEpisodes = parsed;
+          } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.episodes)) {
+            importedEpisodes = parsed.episodes;
+            if (Array.isArray(parsed.categories)) {
+              importedCategories = parsed.categories;
+            }
+          }
+
+          if (importedEpisodes) {
+            if (confirm(`Wczytano ${importedEpisodes.length} odcinków z pliku. Czy chcesz zastąpić bieżącą bazę?`)) {
+              episodes = importedEpisodes;
+              if (importedCategories && importedCategories.length > 0) {
+                categories = importedCategories;
+                saveLocalCategories();
+              }
               saveLocalEpisodes();
+              renderCategorySelects();
               renderEpisodesTable();
-              alert('Baza została pomyślnie zaimportowana!');
+              alert('Baza oraz kategorie zostały pomyślnie zaimportowane!');
             }
           } else {
             alert('Niepoprawny format pliku JSON.');
@@ -1474,6 +1806,41 @@
     function closeModal(id) {
       document.getElementById(id).classList.add('hidden');
     }
+  
+    /* --- MORE MENU DROPDOWN LOGIC --- */
+    function toggleMoreMenu(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const menu = document.getElementById('more-menu-dropdown');
+      if (menu) {
+        menu.classList.toggle('hidden');
+      }
+    }
+
+    function closeMoreMenu() {
+      const menu = document.getElementById('more-menu-dropdown');
+      if (menu && !menu.classList.contains('hidden')) {
+        menu.classList.add('hidden');
+      }
+    }
+
+    function menuAction(fn) {
+      closeMoreMenu();
+      if (typeof fn === 'function') {
+        fn();
+      }
+    }
+
+    // Close dropdown when clicking anywhere outside
+    document.addEventListener('click', (e) => {
+      const container = document.getElementById('more-menu-container');
+      if (container && !container.contains(e.target)) {
+        closeMoreMenu();
+      }
+    });
+
   </script>
 </body>
 </html>
