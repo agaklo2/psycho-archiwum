@@ -1367,6 +1367,53 @@
       return filtered.slice(0, 5);
     }
 
+    
+    function tokenize(text) {
+      if (!text) return [];
+      return text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/gi, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 2 && !STOPWORDS.has(word));
+    }
+
+    function getWordFreq(tokens) {
+      const freq = {};
+      tokens.forEach(w => freq[w] = (freq[w] || 0) + 1);
+      return freq;
+    }
+
+    function cosineSimilarity(freqA, freqB) {
+      const words = new Set([...Object.keys(freqA), ...Object.keys(freqB)]);
+      let dotProduct = 0;
+      let magA = 0;
+      let magB = 0;
+
+      words.forEach(w => {
+        const a = freqA[w] || 0;
+        const b = freqB[w] || 0;
+        dotProduct += a * b;
+        magA += a * a;
+        magB += b * b;
+      });
+
+      if (magA === 0 || magB === 0) return 0;
+      return dotProduct / (Math.sqrt(magA) * Math.sqrt(magB));
+    }
+
+    function jaccardSimilarity(tokensA, tokensB) {
+      const setA = new Set(tokensA);
+      const setB = new Set(tokensB);
+      if (setA.size === 0 && setB.size === 0) return 0;
+
+      let intersection = 0;
+      setA.forEach(w => {
+        if (setB.has(w)) intersection++;
+      });
+      const union = new Set([...setA, ...setB]).size;
+      return union === 0 ? 0 : intersection / union;
+    }
+
     function runAudit() {
       const title = document.getElementById('chk-title').value.trim();
       const script = document.getElementById('chk-script').value.trim();
