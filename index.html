@@ -557,14 +557,31 @@
     let gdriveTokenClient = null;
     let gdriveFileId = null;
 
-    const POLISH_STOPWORDS = new Set([
-      'i', 'a', 'w', 'z', 'o', 'na', 'do', 'ze', 'od', 'po', 'jak', 'to', 'jest',
-      'sie', 'się', 'co', 'nie', 'ale', 'dla', 'oraz', 'ze', 'że', 'czy', 'jako',
-      'za', 'przez', 'we', 'przy', 'tym', 'ten', 'ta', 'te', 'tych', 'to', 'tak',
-      'juz', 'już', 'tylko', 'odcinek', 'film', 'wideo', 'shorts', 'youtube', 'nas',
-      'ciebie', 'twoje', 'twoj', 'twój', 'twoja', 'ich', 'jego', 'jej', 'moze', 'może',
-      'bardzo', 'wiec', 'więc', 'tutaj', 'tam', 'gdzie', 'kiedy', 'dlaczego', 'jaki',
-      'ktory', 'który', 'ktora', 'która', 'ktore', 'które', 'bedzie', 'będzie'
+            const STOPWORDS = new Set([
+      // Comprehensive English Stopwords (NO Polish words)
+      'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and',
+      'any', 'are', 'aren', 'arent', 'as', 'at', 'be', 'because', 'been', 'before',
+      'being', 'below', 'between', 'both', 'but', 'by', 'can', 'cant', 'cannot',
+      'could', 'couldn', 'couldnt', 'did', 'didn', 'didnt', 'do', 'does', 'doesn',
+      'doesnt', 'doing', 'don', 'dont', 'down', 'during', 'each', 'even', 'few',
+      'for', 'from', 'further', 'had', 'hadn', 'hadnt', 'has', 'hasn', 'hasnt',
+      'have', 'haven', 'havent', 'having', 'he', 'hed', 'hell', 'hes', 'head',
+      'her', 'here', 'heres', 'hers', 'herself', 'him', 'himself', 'his', 'how',
+      'hows', 'i', 'id', 'ill', 'im', 'ive', 'if', 'in', 'into', 'is', 'isn',
+      'isnt', 'it', 'its', 'itself', 'just', 'let', 'lets', 'like', 'me', 'more',
+      'most', 'much', 'must', 'mustn', 'mustnt', 'my', 'myself', 'no', 'nor', 'not',
+      'now', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our',
+      'ours', 'ourselves', 'out', 'over', 'own', 'really', 'same', 'say', 'says',
+      'see', 'shall', 'shant', 'she', 'shed', 'shell', 'shes', 'should', 'shouldn',
+      'shouldnt', 'so', 'some', 'such', 'tell', 'than', 'that', 'thats', 'the',
+      'their', 'theirs', 'them', 'themselves', 'then', 'there', 'theres', 'these',
+      'they', 'theyd', 'theyll', 'theyre', 'theyve', 'thing', 'things', 'this',
+      'those', 'through', 'time', 'to', 'too', 'under', 'until', 'up', 'us', 'very',
+      'was', 'wasn', 'wasnt', 'way', 'we', 'wed', 'well', 'were', 'weren', 'werent',
+      'weve', 'what', 'whats', 'when', 'whens', 'where', 'wheres', 'which', 'while',
+      'who', 'whos', 'whom', 'why', 'whys', 'will', 'with', 'won', 'wont', 'would',
+      'wouldn', 'wouldnt', 'year', 'years', 'you', 'youd', 'youll', 'youre', 'youve',
+      'your', 'yours', 'yourself', 'yourselves'
     ]);
 
     /* ==========================================================================
@@ -1258,15 +1275,30 @@
     }
 
     /* ==========================================================================
-       6. NLP SIMILARITY & DUPLICATE CHECKER ENGINE
+       6. NLP SIMILARITY & DUPLICATE CHECKER ENGINE (DOMAIN-AWARE)
        ========================================================================== */
+    // Common psychology bigrams and key terms
+    const PSYCHOLOGY_CONCEPTS = [
+      // English psychology concepts & n-grams
+      'trauma bonding', 'nervous system', 'vagus nerve', 'vagal tone',
+      'attachment style', 'anxious attachment', 'avoidant attachment', 'secure attachment',
+      'inner child', 'inner critic', 'panic attack', 'panic attacks',
+      'emotional regulation', 'self regulation', 'polyvagal theory', 'freeze response',
+      'fight or flight', 'reality testing', 'psychological abuse', 'toxic relationship',
+      'personal boundaries', 'anxiety disorder', 'low self esteem', 'dopamine',
+      'cortisol', 'somatics', 'somatic healing', 'gaslighting', 'narcissism',
+      'narcissist', 'depression', 'trauma', 'dissociation', 'catastrophizing',
+      'projection', 'generalized anxiety', 'imposter syndrome', 'overstimulation',
+      'cognitive distortion', 'hypervigilance', 'people pleasing', 'codependency'
+    ];
+
     function tokenize(text) {
       if (!text) return [];
       return text
         .toLowerCase()
         .replace(/[^a-ząćęłńóśźż0-9\s]/gi, ' ')
         .split(/\s+/)
-        .filter(word => word.length > 2 && !POLISH_STOPWORDS.has(word));
+        .filter(word => word.length > 2 && !STOPWORDS.has(word));
     }
 
     function getWordFreq(tokens) {
@@ -1306,6 +1338,47 @@
       return union === 0 ? 0 : intersection / union;
     }
 
+    // Content-only psychological concept matcher (100% text-driven, NO tag dependency)
+    function extractSharedPsychologyConcepts(inputText, ep) {
+      const lowerInput = inputText.toLowerCase();
+      // Compare purely against the actual spoken/written content: title and script
+      const epText = ((ep.title || '') + ' ' + (ep.script || '')).toLowerCase();
+      const shared = [];
+
+      // 1. Check recognized psychological multi-word and core concepts directly in the text
+      PSYCHOLOGY_CONCEPTS.forEach(concept => {
+        if (lowerInput.includes(concept) && epText.includes(concept)) {
+          if (!shared.some(s => s.toLowerCase() === concept)) {
+            shared.push(concept);
+          }
+        }
+      });
+
+      // 2. Meaningful substantive terms found in both scripts (filtered via English stopwords)
+      const inputWords = tokenize(lowerInput);
+      const epWords = new Set(tokenize(epText));
+      const termRelevance = {};
+
+      inputWords.forEach(w => {
+        if (epWords.has(w) && w.length >= 4 && !STOPWORDS.has(w) && !/^\d+$/.test(w)) {
+          // Score by occurrences in both input and stored episode text
+          termRelevance[w] = (termRelevance[w] || 0) + 1;
+        }
+      });
+
+      // Sort terms by frequency in current text
+      const sortedTerms = Object.keys(termRelevance).sort((a, b) => termRelevance[b] - termRelevance[a]);
+
+      sortedTerms.forEach(w => {
+        // Only add if not already part of an extracted phrase
+        if (!shared.some(s => s.toLowerCase().includes(w))) {
+          shared.push(w);
+        }
+      });
+
+      return shared.slice(0, 5);
+    }
+
     function runAudit() {
       const title = document.getElementById('chk-title').value.trim();
       const script = document.getElementById('chk-script').value.trim();
@@ -1338,7 +1411,8 @@
       }
 
       const results = pool.map(ep => {
-        const epTokens = [...tokenize(ep.title), ...(ep.tags || []).map(t => t.toLowerCase()), ...tokenize(ep.script)];
+        // Pure text tokens: strictly Title + Script body (zero reliance on tags)
+        const epTokens = [...tokenize(ep.title), ...tokenize(ep.script)];
         const epFreq = getWordFreq(epTokens);
 
         const cosSim = cosineSimilarity(inputFreq, epFreq);
@@ -1351,13 +1425,14 @@
 
         const totalScore = Math.min(100, Math.round(((cosSim * 0.5) + (jacSim * 0.25) + (titleJac * 0.25)) * 100));
 
-        // Shared key terms
-        const sharedTerms = Object.keys(inputFreq).filter(w => epFreq[w]);
+        // Shared key psychological concepts & terms
+        const fullInputRaw = title + ' ' + script;
+        const sharedTerms = extractSharedPsychologyConcepts(fullInputRaw, ep);
 
         return {
           episode: ep,
           score: totalScore,
-          sharedTerms: sharedTerms.slice(0, 5)
+          sharedTerms: sharedTerms
         };
       });
 
