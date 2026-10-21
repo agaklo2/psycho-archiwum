@@ -557,31 +557,53 @@
     let gdriveTokenClient = null;
     let gdriveFileId = null;
 
-            const STOPWORDS = new Set([
-      // Comprehensive English Stopwords (NO Polish words)
-      'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and',
-      'any', 'are', 'aren', 'arent', 'as', 'at', 'be', 'because', 'been', 'before',
-      'being', 'below', 'between', 'both', 'but', 'by', 'can', 'cant', 'cannot',
-      'could', 'couldn', 'couldnt', 'did', 'didn', 'didnt', 'do', 'does', 'doesn',
-      'doesnt', 'doing', 'don', 'dont', 'down', 'during', 'each', 'even', 'few',
-      'for', 'from', 'further', 'had', 'hadn', 'hadnt', 'has', 'hasn', 'hasnt',
-      'have', 'haven', 'havent', 'having', 'he', 'hed', 'hell', 'hes', 'head',
-      'her', 'here', 'heres', 'hers', 'herself', 'him', 'himself', 'his', 'how',
-      'hows', 'i', 'id', 'ill', 'im', 'ive', 'if', 'in', 'into', 'is', 'isn',
-      'isnt', 'it', 'its', 'itself', 'just', 'let', 'lets', 'like', 'me', 'more',
-      'most', 'much', 'must', 'mustn', 'mustnt', 'my', 'myself', 'no', 'nor', 'not',
-      'now', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our',
-      'ours', 'ourselves', 'out', 'over', 'own', 'really', 'same', 'say', 'says',
-      'see', 'shall', 'shant', 'she', 'shed', 'shell', 'shes', 'should', 'shouldn',
-      'shouldnt', 'so', 'some', 'such', 'tell', 'than', 'that', 'thats', 'the',
-      'their', 'theirs', 'them', 'themselves', 'then', 'there', 'theres', 'these',
-      'they', 'theyd', 'theyll', 'theyre', 'theyve', 'thing', 'things', 'this',
-      'those', 'through', 'time', 'to', 'too', 'under', 'until', 'up', 'us', 'very',
-      'was', 'wasn', 'wasnt', 'way', 'we', 'wed', 'well', 'were', 'weren', 'werent',
-      'weve', 'what', 'whats', 'when', 'whens', 'where', 'wheres', 'which', 'while',
-      'who', 'whos', 'whom', 'why', 'whys', 'will', 'with', 'won', 'wont', 'would',
-      'wouldn', 'wouldnt', 'year', 'years', 'you', 'youd', 'youll', 'youre', 'youve',
-      'your', 'yours', 'yourself', 'yourselves'
+                const STOPWORDS = new Set([
+      'a', 'about', 'above', 'across', 'actually', 'after', 'again', 'against', 'all', 'almost',
+      'alone', 'along', 'already', 'also', 'although', 'always', 'am', 'among', 'an', 'and',
+      'another', 'any', 'anybody', 'anyone', 'anything', 'anywhere', 'are', 'aren', 'arent', 'around',
+      'as', 'at', 'back', 'be', 'became', 'because', 'become', 'becomes', 'becoming', 'been',
+      'before', 'beforehand', 'behind', 'being', 'below', 'beside', 'besides', 'between', 'beyond',
+      'both', 'bring', 'brought', 'but', 'by', 'call', 'called', 'came', 'can', 'cannot', 'cant',
+      'case', 'come', 'comes', 'coming', 'could', 'couldn', 'couldnt', 'did', 'didn', 'didnt',
+      'do', 'does', 'doesn', 'doesnt', 'doing', 'done', 'don', 'dont', 'down', 'due', 'during',
+      'each', 'early', 'either', 'else', 'elsewhere', 'enough', 'even', 'ever', 'every', 'everybody',
+      'everyone', 'everything', 'everywhere', 'far', 'feel', 'feeling', 'feels', 'felt', 'few',
+      'find', 'first', 'five', 'for', 'former', 'formerly', 'from', 'front', 'further', 'get',
+      'gets', 'getting', 'give', 'given', 'gives', 'giving', 'go', 'goes', 'going', 'gone', 'good',
+      'got', 'great', 'had', 'hadn', 'hadnt', 'happen', 'happens', 'happened', 'has', 'hasn',
+      'hasnt', 'have', 'haven', 'havent', 'having', 'he', 'head', 'hed', 'hell', 'hes', 'help',
+      'her', 'here', 'heres', 'hers', 'herself', 'him', 'himself', 'his', 'how', 'hows', 'however',
+      'i', 'id', 'if', 'ill', 'im', 'ive', 'in', 'into', 'is', 'isn', 'isnt', 'it', 'its', 'itself',
+      'just', 'keep', 'keeps', 'kept', 'kind', 'knew', 'know', 'known', 'knows', 'large', 'last',
+      'lately', 'later', 'least', 'less', 'let', 'lets', 'like', 'likely', 'little', 'look',
+      'looked', 'looking', 'looks', 'made', 'make', 'makes', 'making', 'many', 'matter', 'may',
+      'maybe', 'me', 'mean', 'means', 'meant', 'might', 'mine', 'more', 'moreover', 'most',
+      'mostly', 'much', 'must', 'mustn', 'mustnt', 'my', 'myself', 'name', 'near', 'need',
+      'needs', 'neither', 'never', 'nevertheless', 'new', 'next', 'nine', 'no', 'nobody', 'none',
+      'noone', 'nor', 'not', 'nothing', 'now', 'nowhere', 'number', 'of', 'off', 'often',
+      'on', 'once', 'one', 'ones', 'only', 'onto', 'or', 'other', 'others', 'otherwise',
+      'ought', 'our', 'ours', 'ourselves', 'out', 'over', 'own', 'part', 'people', 'per',
+      'perhaps', 'place', 'point', 'put', 'quite', 'rather', 'really', 'right', 'said', 'same',
+      'saw', 'say', 'saying', 'says', 'second', 'see', 'seeing', 'seem', 'seemed', 'seeming',
+      'seems', 'seen', 'sees', 'several', 'shall', 'she', 'shed', 'shell', 'shes', 'should',
+      'shouldn', 'shouldnt', 'show', 'showed', 'showing', 'shows', 'side', 'since', 'small',
+      'so', 'some', 'somebody', 'someone', 'something', 'sometime', 'sometimes', 'somewhere',
+      'soon', 'start', 'started', 'starting', 'starts', 'still', 'stop', 'such', 'sure',
+      'take', 'taken', 'takes', 'taking', 'tell', 'tells', 'telling', 'told', 'than', 'thank',
+      'thanks', 'that', 'thats', 'the', 'their', 'theirs', 'them', 'themselves', 'then',
+      'there', 'thereafter', 'thereby', 'therefore', 'therein', 'theres', 'these', 'they',
+      'theyd', 'theyll', 'theyre', 'theyve', 'thing', 'things', 'think', 'thinking', 'thinks',
+      'thought', 'thoughts', 'third', 'this', 'those', 'though', 'three', 'through', 'throughout',
+      'thru', 'thus', 'time', 'times', 'to', 'together', 'too', 'took', 'top', 'toward',
+      'towards', 'try', 'trying', 'tried', 'two', 'under', 'understand', 'understands', 'until',
+      'unto', 'up', 'upon', 'us', 'use', 'used', 'uses', 'using', 'very', 'via', 'want',
+      'wanted', 'wants', 'was', 'wasn', 'wasnt', 'way', 'ways', 'we', 'wed', 'well', 'went',
+      'were', 'weren', 'werent', 'weve', 'what', 'whatever', 'whats', 'when', 'whence',
+      'whenever', 'where', 'whereafter', 'whereas', 'whereby', 'wherein', 'wheres', 'wherever',
+      'whether', 'which', 'while', 'who', 'whoever', 'whole', 'whom', 'whose', 'whys', 'why',
+      'will', 'with', 'within', 'without', 'won', 'wont', 'word', 'words', 'work', 'works',
+      'working', 'would', 'wouldn', 'wouldnt', 'yeah', 'year', 'years', 'yes', 'yet', 'you',
+      'youd', 'youll', 'young', 'your', 'youre', 'yours', 'yourself', 'yourselves', 'youve'
     ]);
 
     /* ==========================================================================
@@ -1278,105 +1300,71 @@
        6. NLP SIMILARITY & DUPLICATE CHECKER ENGINE (DOMAIN-AWARE)
        ========================================================================== */
     // Common psychology bigrams and key terms
+        // Targeted Psychological Domain Vocabulary (Single terms & multi-word concepts)
     const PSYCHOLOGY_CONCEPTS = [
-      // English psychology concepts & n-grams
+      // Multi-word phrases
       'trauma bonding', 'nervous system', 'vagus nerve', 'vagal tone',
-      'attachment style', 'anxious attachment', 'avoidant attachment', 'secure attachment',
-      'inner child', 'inner critic', 'panic attack', 'panic attacks',
-      'emotional regulation', 'self regulation', 'polyvagal theory', 'freeze response',
-      'fight or flight', 'reality testing', 'psychological abuse', 'toxic relationship',
-      'personal boundaries', 'anxiety disorder', 'low self esteem', 'dopamine',
-      'cortisol', 'somatics', 'somatic healing', 'gaslighting', 'narcissism',
-      'narcissist', 'depression', 'trauma', 'dissociation', 'catastrophizing',
-      'projection', 'generalized anxiety', 'imposter syndrome', 'overstimulation',
-      'cognitive distortion', 'hypervigilance', 'people pleasing', 'codependency'
+      'attachment style', 'attachment styles', 'anxious attachment', 'avoidant attachment',
+      'secure attachment', 'disorganized attachment', 'inner child', 'inner critic',
+      'panic attack', 'panic attacks', 'emotional regulation', 'self regulation',
+      'polyvagal theory', 'freeze response', 'fight or flight', 'fawn response',
+      'reality testing', 'psychological abuse', 'toxic relationship', 'toxic relationships',
+      'personal boundaries', 'emotional boundaries', 'anxiety disorder', 'low self esteem',
+      'somatic healing', 'somatic experiencing', 'cognitive distortion', 'hypervigilance',
+      'people pleasing', 'codependency', 'emotional neglect', 'gaslighting behavior',
+      'silent treatment', 'love bombing', 'narcissistic abuse', 'narcissistic supply',
+      'imposter syndrome', 'core wound', 'core beliefs', 'coping mechanism', 'coping mechanisms',
+
+      // Single-word psychological & psychiatric terms
+      'trauma', 'traumatic', 'gaslighting', 'gaslighter', 'narcissism', 'narcissist',
+      'narcissistic', 'empathy', 'empathic', 'empath', 'somatics', 'somatic',
+      'dopamine', 'cortisol', 'oxytocin', 'serotonin', 'adrenaline',
+      'amygdala', 'prefrontal', 'neurobiology', 'dissociation', 'dissociative',
+      'projection', 'projecting', 'catastrophizing', 'rumination', 'ruminating',
+      'codependent', 'boundaries', 'boundary', 'trigger', 'triggered', 'triggers',
+      'triggering', 'shame', 'guilt', 'resentment', 'avoidance', 'avoidant',
+      'anxious', 'anxiety', 'depression', 'depressive', 'abandonment', 'rejection',
+      'invalidation', 'validation', 'defensiveness', 'overstimulation', 'dysregulation',
+      'regulation', 'grounding', 'mindfulness', 'neuroplasticity', 'attachment',
+      'subconscious', 'psyche', 'psychology', 'psychotherapy', 'therapy', 'therapist'
     ];
 
-    function tokenize(text) {
-      if (!text) return [];
-      return text
-        .toLowerCase()
-        .replace(/[^a-ząćęłńóśźż0-9\s]/gi, ' ')
-        .split(/\s+/)
-        .filter(word => word.length > 2 && !STOPWORDS.has(word));
-    }
-
-    function getWordFreq(tokens) {
-      const freq = {};
-      tokens.forEach(w => freq[w] = (freq[w] || 0) + 1);
-      return freq;
-    }
-
-    function cosineSimilarity(freqA, freqB) {
-      const words = new Set([...Object.keys(freqA), ...Object.keys(freqB)]);
-      let dotProduct = 0;
-      let magA = 0;
-      let magB = 0;
-
-      words.forEach(w => {
-        const a = freqA[w] || 0;
-        const b = freqB[w] || 0;
-        dotProduct += a * b;
-        magA += a * a;
-        magB += b * b;
-      });
-
-      if (magA === 0 || magB === 0) return 0;
-      return dotProduct / (Math.sqrt(magA) * Math.sqrt(magB));
-    }
-
-    function jaccardSimilarity(tokensA, tokensB) {
-      const setA = new Set(tokensA);
-      const setB = new Set(tokensB);
-      if (setA.size === 0 && setB.size === 0) return 0;
-
-      let intersection = 0;
-      setA.forEach(w => {
-        if (setB.has(w)) intersection++;
-      });
-      const union = new Set([...setA, ...setB]).size;
-      return union === 0 ? 0 : intersection / union;
-    }
-
-    // Content-only psychological concept matcher (100% text-driven, NO tag dependency)
+    // Strict Domain-Specific Concept Extractor
     function extractSharedPsychologyConcepts(inputText, ep) {
       const lowerInput = inputText.toLowerCase();
-      // Compare purely against the actual spoken/written content: title and script
       const epText = ((ep.title || '') + ' ' + (ep.script || '')).toLowerCase();
       const shared = [];
 
-      // 1. Check recognized psychological multi-word and core concepts directly in the text
+      // 1. Scan exclusively for verified psychological phrases and clinical terms
       PSYCHOLOGY_CONCEPTS.forEach(concept => {
-        if (lowerInput.includes(concept) && epText.includes(concept)) {
-          if (!shared.some(s => s.toLowerCase() === concept)) {
+        // Use word boundary check so 'part' doesn't match 'particular', or 'anxious' matches as full term
+        const regex = new RegExp('(?:\\b|^)' + concept.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '(?:\\b|$)', 'i');
+        if (regex.test(lowerInput) && regex.test(epText)) {
+          if (!shared.some(s => s.toLowerCase() === concept.toLowerCase())) {
             shared.push(concept);
           }
         }
       });
 
-      // 2. Meaningful substantive terms found in both scripts (filtered via English stopwords)
-      const inputWords = tokenize(lowerInput);
-      const epWords = new Set(tokenize(epText));
-      const termRelevance = {};
-
-      inputWords.forEach(w => {
-        if (epWords.has(w) && w.length >= 4 && !STOPWORDS.has(w) && !/^\d+$/.test(w)) {
-          // Score by occurrences in both input and stored episode text
-          termRelevance[w] = (termRelevance[w] || 0) + 1;
-        }
+      // 2. Sort multi-word phrases first (e.g. 'nervous system' before 'nervous')
+      shared.sort((a, b) => {
+        const aWords = a.split(' ').length;
+        const bWords = b.split(' ').length;
+        if (bWords !== aWords) return bWords - aWords;
+        return b.length - a.length;
       });
 
-      // Sort terms by frequency in current text
-      const sortedTerms = Object.keys(termRelevance).sort((a, b) => termRelevance[b] - termRelevance[a]);
-
-      sortedTerms.forEach(w => {
-        // Only add if not already part of an extracted phrase
-        if (!shared.some(s => s.toLowerCase().includes(w))) {
-          shared.push(w);
+      // Eliminate redundant sub-words (e.g. if 'anxious attachment' is present, drop standalone 'attachment' or 'anxious')
+      const filtered = [];
+      for (let i = 0; i < shared.length; i++) {
+        const item = shared[i];
+        const isSubWordOfLonger = filtered.some(existing => existing.includes(item) && existing !== item);
+        if (!isSubWordOfLonger) {
+          filtered.push(item);
         }
-      });
+      }
 
-      return shared.slice(0, 5);
+      return filtered.slice(0, 5);
     }
 
     function runAudit() {
