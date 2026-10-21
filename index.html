@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PsychoArchiwum Pro | Baza Odcinków & Anti-Duplicate</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Identity Services (OAuth2) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e', 900: '#134e4a' },
+            gdrive: { 50: '#eff6ff', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <!-- Logo & Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <i class="fa-solid fa-brain text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight flex items-center gap-2">
+            PsychoArchiwum <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">Cloud Sync</span>
+          </h1>
+          <p class="text-xs text-slate-500">Menedżer skryptów & audytor powtórzeń na YouTube</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+        <button id="nav-btn-library" onclick="switchTab('library')" class="py-1.5 px-3.5 rounded-lg bg-white text-slate-900 shadow-sm transition-all flex items-center gap-2">
+          <i class="fa-solid fa-layer-group text-brand-600"></i> Baza Odcinków (<span id="episodes-count-badge">0</span>)
+        </button>
+        <button id="nav-btn-checker" onclick="switchTab('checker')" class="py-1.5 px-3.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center gap-2">
+          <i class="fa-solid fa-shield-halved text-amber-500"></i> Audyt Powtórzeń
+        </button>
+      </nav>
+
+      <!-- Google Drive Sync Status & Action Buttons -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Google Drive Connect Button / Status Badge -->
+        <button id="gdrive-btn" onclick="handleGDriveClick()" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-sm bg-white border-slate-200 hover:border-blue-400 text-slate-700">
+          <i class="fa-brands fa-google-drive text-blue-600 text-sm"></i>
+          <span id="gdrive-btn-label">Połącz z Dyskiem Google</span>
+          <span id="gdrive-status-indicator" class="w-2 h-2 rounded-full bg-slate-300"></span>
+        </button>
+
+        <button onclick="openModal('add-episode-modal')" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-sm transition-all">
+          <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Dodaj odcinek</span>
+        </button>
+
+        <!-- Dropdown / More menu -->
+        <div class="relative group">
+          <button class="p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all text-sm">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </button>
+          <div class="absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 hidden group-hover:block z-50 text-xs">
+            <button onclick="openGDriveSettings()" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700">
+              <i class="fa-solid fa-gear text-slate-400"></i> Ustawienia Dysku Google
+            </button>
+            <button onclick="exportDataJSON()" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700">
+              <i class="fa-solid fa-download text-slate-400"></i> Eksportuj plik JSON na dysk
+            </button>
+            <button onclick="exportDataCSV()" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700">
+              <i class="fa-solid fa-file-csv text-slate-400"></i> Eksportuj do CSV (Excel)
+            </button>
+            <label class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 cursor-pointer">
+              <i class="fa-solid fa-upload text-slate-400"></i> Importuj kopię z JSON
+              <input type="file" accept=".json" class="hidden" onchange="importDataJSON(event)">
+            </label>
+            <div class="border-t border-slate-100 my-1"></div>
+            <button onclick="loadDemoData()" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-brand-600 font-medium">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Załaduj przykłady demo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Nav Bar -->
+    <div class="md:hidden flex border-t border-slate-200 bg-slate-50 px-4 py-1.5 justify-around text-xs font-semibold">
+      <button onclick="switchTab('library')" id="mob-nav-library" class="py-1 px-3 rounded-lg text-brand-700 font-bold flex items-center gap-1.5">
+        <i class="fa-solid fa-layer-group"></i> Baza (<span id="mob-episodes-count">0</span>)
+      </button>
+      <button onclick="switchTab('checker')" id="mob-nav-checker" class="py-1 px-3 rounded-lg text-slate-600 flex items-center gap-1.5">
+        <i class="fa-solid fa-shield-halved text-amber-500"></i> Audyt Powtórzeń
+      </button>
+    </div>
+  </header>
+
+  <!-- CLOUD SYNC BANNER (Notification area) -->
+  <div id="sync-notification" class="hidden bg-blue-50 border-b border-blue-100 px-4 py-2 text-xs text-blue-800 transition-all">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <span id="sync-notification-text" class="flex items-center gap-2 font-medium">
+        <i class="fa-solid fa-rotate fa-spin text-blue-600"></i> Synchronizowanie z Dyskiem Google...
+      </span>
+      <button onclick="closeSyncNotification()" class="text-blue-500 hover:text-blue-700 text-sm">&times;</button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- =============================================================== -->
+    <!-- VIEW 1: BROWSE EPISODES LIBRARY                                  -->
+    <!-- =============================================================== -->
+    <section id="view-library" class="space-y-6">
+      <!-- Search, Format Filter & Stats Bar -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <!-- Search bar -->
+        <div class="relative flex-1">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text" id="library-search" oninput="renderEpisodesTable()" placeholder="Szukaj w tytułach, skryptach, koncepcjach..." class="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-slate-50/50">
+        </div>
+
+        <!-- Format and category filters -->
+        <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div class="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+            <button onclick="filterFormat('all')" id="filter-fmt-all" class="px-2.5 py-1 rounded-lg bg-white text-slate-800 shadow-xs">Wszystkie</button>
+            <button onclick="filterFormat('standard')" id="filter-fmt-std" class="px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-800">16:9 Film</button>
+            <button onclick="filterFormat('shorts')" id="filter-fmt-sh" class="px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-800">9:16 Shorts</button>
+          </div>
+
+          <select id="filter-category" onchange="renderEpisodesTable()" class="text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-700 py-1.5 px-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="all">Wszystkie kategorie</option>
+            <option value="Trauma i Relacje">Trauma i Relacje</option>
+            <option value="Układ Nerwowy i Somatyka">Układ Nerwowy i Somatyka</option>
+            <option value="Manipulacja i Narcyzm">Manipulacja i Narcyzm</option>
+            <option value="Lęki i Emocje">Lęki i Emocje</option>
+            <option value="Rozwój i Terapia">Rozwój i Terapia</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Episodes Grid / List -->
+      <div id="episodes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="episodes-empty-state" class="hidden text-center py-16 px-4 bg-white rounded-3xl border border-dashed border-slate-300">
+        <div class="w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-4 text-2xl">
+          <i class="fa-solid fa-folder-open"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-800 mb-1">Brak odcinków w bazie</h3>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto mb-4">Dodaj swój pierwszy film lub pobierz przykłady demonstracyjne, by przetestować weryfikator powtórzeń.</p>
+        <div class="flex items-center justify-center gap-3">
+          <button onclick="openModal('add-episode-modal')" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-xs font-bold shadow hover:bg-brand-700 transition-all">
+            + Dodaj odcinek
+          </button>
+          <button onclick="loadDemoData()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition-all">
+            Załaduj demo
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============================================================== -->
+    <!-- VIEW 2: DUPLICATE & REPETITION CHECKER                           -->
+    <!-- =============================================================== -->
+    <section id="view-checker" class="hidden space-y-6">
+      <div class="bg-gradient-to-r from-teal-900 to-slate-900 text-white p-6 rounded-3xl shadow-lg relative overflow-hidden">
+        <div class="relative z-10 max-w-2xl">
+          <span class="text-xs font-bold uppercase tracking-wider text-teal-300 bg-teal-950/60 px-2.5 py-1 rounded-full border border-teal-700/50 inline-block mb-3">
+            Algorytm NLP & Zbieżność Tematyczna
+          </span>
+          <h2 class="text-xl sm:text-2xl font-black mb-2">Audytor Unikalności Tematu i Skryptu</h2>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            Wpisz nowy pomysł lub wklej robocze napisy (.srt/.ass). System sprawdzi czy temat nie kanibalizuje już opublikowanych filmów, wykryje powtórzone pojęcia psychologiczne i wskaże możliwości recyklingu.
+          </p>
+        </div>
+        <i class="fa-solid fa-shield-halved absolute -right-4 -bottom-6 text-9xl text-white/5 pointer-events-none"></i>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left: Input Form for checking -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center justify-between">
+              <span>Weryfikowany materiał</span>
+              <button onclick="clearCheckerForm()" class="text-xs font-normal text-slate-400 hover:text-slate-600">Wyczyść</button>
+            </h3>
+
+            <!-- Format Checkbox & Buttons -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Format planowanego materiału:</label>
+              <div class="grid grid-cols-2 gap-2 mb-2">
+                <button type="button" id="chk-fmt-std" onclick="setCheckerFormat('standard')" class="flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 text-xs font-bold transition-all border-brand-600 bg-brand-50 text-brand-900">
+                  <i class="fa-solid fa-tv"></i> Film (16:9)
+                </button>
+                <button type="button" id="chk-fmt-sh" onclick="setCheckerFormat('shorts')" class="flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 text-xs font-bold transition-all border-slate-200 bg-white text-slate-600 hover:border-slate-300">
+                  <i class="fa-solid fa-mobile-screen"></i> Shorts (9:16)
+                </button>
+              </div>
+
+              <!-- Dedicated checkbox -->
+              <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer bg-slate-50 p-2 rounded-xl border border-slate-200/70 hover:bg-slate-100 transition-colors">
+                <input type="checkbox" id="chk-is-shorts-box" onchange="toggleCheckerShortsCheckbox(this.checked)" class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300">
+                <span>To jest YouTube Shorts / Rolka (9:16)</span>
+              </label>
+              <input type="hidden" id="chk-format-val" value="standard">
+            </div>
+
+            <!-- Proposed Title -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Planowany tytuł lub teza:</label>
+              <input type="text" id="chk-title" placeholder="np. Dlaczego zamierasz podczas kłótni? Reakcja Freeze" class="w-full text-xs sm:text-sm p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-slate-50/50">
+            </div>
+
+            <!-- Subtitle Importer accordion for Checker -->
+            <div class="border border-slate-200 rounded-xl p-3 bg-slate-50/50">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <i class="fa-solid fa-closed-captioning text-brand-600"></i> Masz plik .srt lub .ass?
+                </span>
+                <span class="text-[10px] text-slate-500 font-mono">Automatyczne czyszczenie</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="flex-1 text-center py-2 px-3 border border-dashed border-brand-300 bg-brand-50/50 hover:bg-brand-50 text-brand-700 rounded-lg text-xs font-semibold cursor-pointer transition-all">
+                  <i class="fa-solid fa-file-arrow-up mr-1"></i> Wczytaj plik .SRT lub .ASS
+                  <input type="file" accept=".srt,.ass,.ssa,.txt" class="hidden" onchange="handleSubtitleUpload(event, 'chk-script')">
+                </label>
+              </div>
+            </div>
+
+            <!-- Script / Draft -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1 flex items-center justify-between">
+                <span>Konspekt, szkic lub pełny skrypt:</span>
+                <span id="chk-word-count" class="text-[10px] text-slate-400">0 słów</span>
+              </label>
+              <textarea id="chk-script" oninput="updateWordCount('chk-script', 'chk-word-count')" rows="6" placeholder="Wklej tutaj treść skryptu lub użyj przycisku wczytywania napisów powyżej..." class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-slate-50/50 font-sans"></textarea>
+            </div>
+
+            <!-- Comparison Filter Scope -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Zakres porównania w bazie:</label>
+              <select id="chk-scope" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2 font-medium">
+                <option value="all">Porównaj ze wszystkimi filmami (16:9 oraz 9:16)</option>
+                <option value="same-format">Tylko ten sam format (np. Short vs Short)</option>
+                <option value="cross-format">Wykrywaj kanibalizację i okazje do recyklingu</option>
+              </select>
+            </div>
+
+            <button onclick="runAudit()" class="w-full py-3 bg-gradient-to-r from-brand-600 to-teal-600 hover:from-brand-700 hover:to-teal-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+              <i class="fa-solid fa-chart-pie"></i> Wykonaj Audyt Podobieństwa
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Audit Results -->
+        <div class="lg:col-span-7 space-y-4">
+          <div id="audit-initial-placeholder" class="bg-white p-12 rounded-3xl border border-slate-200 text-center text-slate-400">
+            <i class="fa-solid fa-magnifying-glass-chart text-4xl mb-3 text-slate-300"></i>
+            <h4 class="text-sm font-bold text-slate-700 mb-1">Wyniki analizy pojawią się tutaj</h4>
+            <p class="text-xs max-w-sm mx-auto">Wpisz tytuł lub wklej skrypt z lewej strony i kliknij przycisk audytu.</p>
+          </div>
+
+          <div id="audit-results-card" class="hidden space-y-4">
+            <!-- Summary Metric Card -->
+            <div id="audit-verdict-box" class="p-5 rounded-3xl border transition-all">
+              <!-- Dynamically rendered -->
+            </div>
+
+            <!-- Matches List -->
+            <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
+              <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                <span>Najbardziej zbliżone filmy z Twojej bazy</span>
+                <span id="audit-matches-count" class="text-slate-400 lowercase font-normal"></span>
+              </h4>
+              <div id="audit-matches-list" class="space-y-3">
+                <!-- Matches injected here -->
+              </div>
+            </div>
+
+            <!-- Angles Suggestions -->
+            <div class="bg-brand-50/70 border border-brand-200 p-5 rounded-3xl space-y-2">
+              <h4 class="text-xs font-bold text-brand-900 flex items-center gap-2">
+                <i class="fa-solid fa-lightbulb text-amber-500"></i> Rekomendacja strategiczna
+              </h4>
+              <p id="audit-recommendation-text" class="text-xs text-brand-800 leading-relaxed"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: ADD / EDIT EPISODE                                       -->
+  <!-- =============================================================== -->
+  <div id="add-episode-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <div>
+          <h3 id="modal-episode-title" class="text-base font-bold text-slate-900">Dodaj nowy odcinek do bazy</h3>
+          <p class="text-xs text-slate-500">Zapisuje się bezpośrednio w bazie (Dysk Google / LocalStorage)</p>
+        </div>
+        <button onclick="closeModal('add-episode-modal')" class="text-slate-400 hover:text-slate-700 text-lg">&times;</button>
+      </div>
+
+      <!-- Scrollable Form -->
+      <div class="p-6 overflow-y-auto custom-scroll space-y-4 flex-1">
+        <input type="hidden" id="form-edit-id" value="">
+
+        <!-- Title -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Tytuł odcinka / publikacji *</label>
+          <input type="text" id="form-title" placeholder="np. Jak styl przywiązania niszczy Twoje relacje?" class="w-full text-xs sm:text-sm p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <!-- Format & Category -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Format wideo *</label>
+            <div class="grid grid-cols-2 gap-2 mb-1.5">
+              <button type="button" id="form-fmt-std" onclick="setFormFormat('standard')" class="py-1.5 px-2 rounded-lg text-xs font-bold border-2 border-brand-600 bg-brand-50 text-brand-900 flex items-center justify-center gap-1">
+                <i class="fa-solid fa-tv"></i> 16:9 Film
+              </button>
+              <button type="button" id="form-fmt-sh" onclick="setFormFormat('shorts')" class="py-1.5 px-2 rounded-lg text-xs font-bold border-2 border-slate-200 bg-white text-slate-600 flex items-center justify-center gap-1">
+                <i class="fa-solid fa-mobile-screen"></i> 9:16 Shorts
+              </button>
+            </div>
+            <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+              <input type="checkbox" id="form-is-shorts-box" onchange="toggleFormShortsCheckbox(this.checked)" class="w-3.5 h-3.5 rounded text-brand-600 focus:ring-brand-500">
+              <span class="text-[11px]">To jest YouTube Shorts (9:16)</span>
+            </label>
+            <input type="hidden" id="form-format" value="standard">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Kategoria psychologiczna</label>
+            <select id="form-category" class="w-full text-xs p-2 rounded-xl border border-slate-200">
+              <option value="Trauma i Relacje">Trauma i Relacje</option>
+              <option value="Układ Nerwowy i Somatyka">Układ Nerwowy i Somatyka</option>
+              <option value="Manipulacja i Narcyzm">Manipulacja i Narcyzm</option>
+              <option value="Lęki i Emocje">Lęki i Emocje</option>
+              <option value="Rozwój i Terapia">Rozwój i Terapia</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tags / Psychology Keywords -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Główne pojęcia psychologiczne (oddzielone przecinkami)</label>
+          <input type="text" id="form-tags" placeholder="np. styl lękowy, styl unikający, wewnętrzne dziecko, samoregulacja" class="w-full text-xs p-2.5 rounded-xl border border-slate-200">
+        </div>
+
+        <!-- Subtitle Cleaner Section -->
+        <div class="border border-brand-200 bg-brand-50/40 rounded-2xl p-3.5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-brand-900 flex items-center gap-1.5">
+              <i class="fa-solid fa-wand-magic-sparkles text-brand-600"></i> Importuj napisy (.SRT lub .ASS)
+            </span>
+            <span class="text-[10px] text-brand-700 font-semibold">Oczyszcza znaczniki czasu i kody formatowania</span>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <label class="flex-1 text-center py-2 px-3 border border-brand-300 bg-white hover:bg-brand-50 text-brand-700 rounded-xl text-xs font-semibold cursor-pointer shadow-xs transition-all">
+              <i class="fa-solid fa-file-arrow-up mr-1"></i> Wybierz plik .SRT lub .ASS z dysku
+              <input type="file" accept=".srt,.ass,.ssa,.txt" class="hidden" onchange="handleSubtitleUpload(event, 'form-script')">
+            </label>
+          </div>
+        </div>
+
+        <!-- Clean Script -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+            <span>Czysty skrypt / Transkrypcja odcinka *</span>
+            <span id="form-word-count" class="text-[10px] text-slate-400">0 słów</span>
+          </label>
+          <textarea id="form-script" oninput="updateWordCount('form-script', 'form-word-count')" rows="7" placeholder="Wklej skrypt lub wczytaj plik z napisami powyżej..." class="w-full text-xs p-2.5 rounded-xl border border-slate-200 font-sans"></textarea>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <button type="button" onclick="closeModal('add-episode-modal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800">Anuluj</button>
+        <button type="button" onclick="saveEpisodeForm()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-2">
+          <i class="fa-solid fa-floppy-disk"></i> Zapisz odcinek
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: GOOGLE DRIVE CONFIGURATION & TUTORIAL                    -->
+  <!-- =============================================================== -->
+  <div id="gdrive-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-blue-50/50">
+        <div class="flex items-center gap-2.5">
+          <i class="fa-brands fa-google-drive text-blue-600 text-xl"></i>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Synchronizacja z Dyskiem Google</h3>
+            <p class="text-xs text-slate-500">Baza zapisuje się w pliku baza_odcinkow_psychologia.json</p>
+          </div>
+        </div>
+        <button onclick="closeModal('gdrive-modal')" class="text-slate-400 hover:text-slate-700 text-lg">&times;</button>
+      </div>
+
+      <div class="p-6 overflow-y-auto custom-scroll space-y-4 text-xs">
+        <!-- Status card -->
+        <div id="gdrive-modal-status-card" class="p-3.5 rounded-2xl border bg-slate-50 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span id="gdrive-modal-dot" class="w-3 h-3 rounded-full bg-slate-300"></span>
+            <div>
+              <p id="gdrive-modal-status-text" class="font-bold text-slate-800">Niepołączono z Dyskiem</p>
+              <p id="gdrive-modal-email" class="text-slate-500 text-[11px]">Baza zapisuje się lokalnie w pamięci przeglądarki</p>
+            </div>
+          </div>
+          <button id="gdrive-disconnect-btn" onclick="disconnectGDrive()" class="hidden px-2.5 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-50 rounded-lg">
+            Rozłącz
+          </button>
+        </div>
+
+        <!-- Google Client ID Input -->
+        <div class="space-y-1.5">
+          <label class="block font-bold text-slate-700">Google OAuth 2.0 Client ID:</label>
+          <input type="text" id="gdrive-client-id-input" placeholder="np. 1234567890-abcdef.apps.googleusercontent.com" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 font-mono text-xs">
+          <p class="text-[11px] text-slate-400">Identyfikator zostanie zapamiętany w Twojej przeglądarce.</p>
+        </div>
+
+        <!-- 3-Minute Setup Guide (Collapsible/Readable) -->
+        <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/70 space-y-2.5">
+          <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-question text-blue-600"></i> Jak zdobyć bezpłatny Client ID (w 3 minuty)?
+          </h4>
+          <ol class="list-decimal pl-4 space-y-1.5 text-slate-600 text-[11px] leading-relaxed">
+            <li>Wejdź na <a href="https://console.cloud.google.com/" target="_blank" class="text-blue-600 underline font-semibold">Google Cloud Console</a> i utwórz bezpłatny projekt (np. <em>Moje PsychoArchiwum</em>).</li>
+            <li>W menu <strong>APIs & Services</strong> kliknij <strong>Library</strong>, wyszukaj <strong>Google Drive API</strong> i kliknij <strong>Enable</strong>.</li>
+            <li>Przejdź do <strong>OAuth consent screen</strong>, wybierz <em>External</em>, wpisz nazwę aplikacji i swój e-mail.</li>
+            <li>W zakładce <strong>Credentials</strong> kliknij <strong>+ CREATE CREDENTIALS &gt; OAuth client ID</strong>.</li>
+            <li>Wybierz typ <em>Web application</em>. W polu <strong>Authorized JavaScript origins</strong> dodaj adres, pod którym uruchamiasz plik (np. <code class="bg-slate-200 px-1 rounded">http://localhost</code> lub <code class="bg-slate-200 px-1 rounded">http://127.0.0.1:5500</code>).</li>
+            <li>Skopiuj wygenerowany <strong>Client ID</strong> i wklej go w pole powyżej.</li>
+          </ol>
+        </div>
+
+        <div class="flex items-center justify-between pt-2">
+          <button onclick="saveClientId()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-xl font-bold text-slate-700">
+            Zapisz sam Client ID
+          </button>
+          <button onclick="saveAndConnectGDrive()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md flex items-center gap-1.5">
+            <i class="fa-brands fa-google-drive"></i> Zapisz i Zaloguj przez Google
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    /* ==========================================================================
+       1. GLOBAL STATE & POLISH STOPWORDS
+       ========================================================================== */
+    const STORAGE_KEY = 'psycho_episodes_v3';
+    const GDRIVE_CLIENT_ID_KEY = 'psycho_gdrive_client_id';
+    const GDRIVE_FILE_NAME = 'baza_odcinkow_psychologia.json';
+
+    let episodes = [];
+    let currentFilterFormat = 'all';
+    let gdriveToken = null;
+    let gdriveTokenClient = null;
+    let gdriveFileId = null;
+
+    const POLISH_STOPWORDS = new Set([
+      'i', 'a', 'w', 'z', 'o', 'na', 'do', 'ze', 'od', 'po', 'jak', 'to', 'jest',
+      'sie', 'się', 'co', 'nie', 'ale', 'dla', 'oraz', 'ze', 'że', 'czy', 'jako',
+      'za', 'przez', 'we', 'przy', 'tym', 'ten', 'ta', 'te', 'tych', 'to', 'tak',
+      'juz', 'już', 'tylko', 'odcinek', 'film', 'wideo', 'shorts', 'youtube', 'nas',
+      'ciebie', 'twoje', 'twoj', 'twój', 'twoja', 'ich', 'jego', 'jej', 'moze', 'może',
+      'bardzo', 'wiec', 'więc', 'tutaj', 'tam', 'gdzie', 'kiedy', 'dlaczego', 'jaki',
+      'ktory', 'który', 'ktora', 'która', 'ktore', 'które', 'bedzie', 'będzie'
+    ]);
+
+    /* ==========================================================================
+       2. INITIALIZATION
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadLocalEpisodes();
+      if (episodes.length === 0) {
+        loadDemoData(false);
+      } else {
+        renderEpisodesTable();
+      }
+
+      // Restore saved Google Client ID if exists
+      const savedClientId = localStorage.getItem(GDRIVE_CLIENT_ID_KEY);
+      if (savedClientId) {
+        document.getElementById('gdrive-client-id-input').value = savedClientId;
+      }
+    });
+
+    function loadLocalEpisodes() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          episodes = JSON.parse(raw);
+        }
+      } catch (err) {
+        console.error('Błąd odczytu z localStorage:', err);
+        episodes = [];
+      }
+      updateCounts();
+    }
+
+    function saveLocalEpisodes() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(episodes));
+        updateCounts();
+        // If Google Drive is active, auto-sync to cloud
+        if (gdriveToken && gdriveFileId) {
+          syncToGoogleDrive();
+        }
+      } catch (err) {
+        console.error('Błąd zapisu w localStorage:', err);
+      }
+    }
+
+    function updateCounts() {
+      const count = episodes.length;
+      document.getElementById('episodes-count-badge').textContent = count;
+      document.getElementById('mob-episodes-count').textContent = count;
+    }
+
+    /* ==========================================================================
+       3. GOOGLE DRIVE API INTEGRATION (OPTION 1)
+       ========================================================================== */
+    function openGDriveSettings() {
+      openModal('gdrive-modal');
+    }
+
+    function handleGDriveClick() {
+      if (gdriveToken) {
+        openGDriveSettings();
+      } else {
+        const savedClientId = localStorage.getItem(GDRIVE_CLIENT_ID_KEY);
+        if (!savedClientId) {
+          openGDriveSettings();
+        } else {
+          initiateGoogleOAuth(savedClientId);
+        }
+      }
+    }
+
+    function saveClientId() {
+      const cid = document.getElementById('gdrive-client-id-input').value.trim();
+      if (!cid) {
+        alert('Podaj poprawny Client ID.');
+        return;
+      }
+      localStorage.setItem(GDRIVE_CLIENT_ID_KEY, cid);
+      alert('Client ID został zapisany!');
+    }
+
+    function saveAndConnectGDrive() {
+      const cid = document.getElementById('gdrive-client-id-input').value.trim();
+      if (!cid) {
+        alert('Najpierw wklej swój Google Client ID!');
+        return;
+      }
+      localStorage.setItem(GDRIVE_CLIENT_ID_KEY, cid);
+      initiateGoogleOAuth(cid);
+    }
+
+    function initiateGoogleOAuth(clientId) {
+      if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+        alert('Biblioteka Google Identity nie załadowała się jeszcze. Upewnij się, że masz połączenie z Internetem i odśwież stronę.');
+        return;
+      }
+
+      showSyncBanner('Łączenie z kontem Google...');
+
+      gdriveTokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: async (resp) => {
+          if (resp.error) {
+            console.error('Google Auth Error:', resp);
+            hideSyncBanner();
+            alert('Błąd autoryzacji Google: ' + resp.error);
+            return;
+          }
+          gdriveToken = resp.access_token;
+          updateGDriveUI(true);
+          closeModal('gdrive-modal');
+          showSyncBanner('Połączono! Pobieranie bazy z Dysku Google...');
+          await initGDriveStorage();
+        }
+      });
+
+      gdriveTokenClient.requestAccessToken({ prompt: 'consent' });
+    }
+
+    function updateGDriveUI(connected) {
+      const btn = document.getElementById('gdrive-btn');
+      const label = document.getElementById('gdrive-btn-label');
+      const indicator = document.getElementById('gdrive-status-indicator');
+      const modalDot = document.getElementById('gdrive-modal-dot');
+      const modalStatus = document.getElementById('gdrive-modal-status-text');
+      const modalEmail = document.getElementById('gdrive-modal-email');
+      const disconnectBtn = document.getElementById('gdrive-disconnect-btn');
+
+      if (connected) {
+        label.textContent = 'Dysk Google: Połączono';
+        indicator.className = 'w-2 h-2 rounded-full bg-emerald-500 shadow-sm';
+        btn.className = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-sm bg-blue-50 border-blue-300 text-blue-900';
+        modalDot.className = 'w-3 h-3 rounded-full bg-emerald-500';
+        modalStatus.textContent = 'Połączono z Dyskiem Google';
+        modalEmail.textContent = 'Automatyczna synchronizacja pliku baza_odcinkow_psychologia.json jest aktywna.';
+        disconnectBtn.classList.remove('hidden');
+      } else {
+        label.textContent = 'Połącz z Dyskiem Google';
+        indicator.className = 'w-2 h-2 rounded-full bg-slate-300';
+        btn.className = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-sm bg-white border-slate-200 hover:border-blue-400 text-slate-700';
+        modalDot.className = 'w-3 h-3 rounded-full bg-slate-300';
+        modalStatus.textContent = 'Niepołączono z Dyskiem';
+        modalEmail.textContent = 'Baza zapisuje się lokalnie w pamięci przeglądarki';
+        disconnectBtn.classList.add('hidden');
+      }
+    }
+
+    function disconnectGDrive() {
+      if (gdriveToken) {
+        google.accounts.oauth2.revoke(gdriveToken, () => {});
+      }
+      gdriveToken = null;
+      gdriveFileId = null;
+      updateGDriveUI(false);
+      alert('Rozłączono z Dyskiem Google. Nowe zmiany będą zapisywane lokalnie.');
+    }
+
+    async function initGDriveStorage() {
+      try {
+        // 1. Search for existing file on Google Drive
+        const query = encodeURIComponent(`name = '${GDRIVE_FILE_NAME}' and trashed = false`);
+        const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name,modifiedTime)`, {
+          headers: { 'Authorization': `Bearer ${gdriveToken}` }
+        });
+        const searchData = await searchRes.json();
+
+        if (searchData.files && searchData.files.length > 0) {
+          // File exists: load it
+          gdriveFileId = searchData.files[0].id;
+          const contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${gdriveFileId}?alt=media`, {
+            headers: { 'Authorization': `Bearer ${gdriveToken}` }
+          });
+          const driveEpisodes = await contentRes.json();
+          if (Array.isArray(driveEpisodes) && driveEpisodes.length > 0) {
+            episodes = driveEpisodes;
+            saveLocalEpisodes();
+            renderEpisodesTable();
+            showSyncBanner(`Pobrano ${episodes.length} odcinków z Dysku Google!`, 3000);
+          } else {
+            // empty or malformed: push local data
+            await syncToGoogleDrive();
+          }
+        } else {
+          // File doesn't exist: create it with current episodes
+          await createDriveFile();
+        }
+      } catch (err) {
+        console.error('Błąd inicjalizacji pliku na Google Drive:', err);
+        showSyncBanner('Błąd synchronizacji z Dyskiem. Dane są bezpieczne lokalnie.', 4000);
+      }
+    }
+
+    async function createDriveFile() {
+      showSyncBanner('Tworzenie pliku bazy na Dysku Google...');
+      const metadata = {
+        name: GDRIVE_FILE_NAME,
+        mimeType: 'application/json'
+      };
+      const boundary = '-------314159265358979323846';
+      const delimiter = "\r\n--" + boundary + "\r\n";
+      const closeDelim = "\r\n--" + boundary + "--";
+
+      const multipartRequestBody =
+        delimiter +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(metadata) +
+        delimiter +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(episodes, null, 2) +
+        closeDelim;
+
+      const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${gdriveToken}`,
+          'Content-Type': 'multipart/related; boundary=' + boundary
+        },
+        body: multipartRequestBody
+      });
+      const data = await res.json();
+      if (data.id) {
+        gdriveFileId = data.id;
+        showSyncBanner('Plik utworzony i zsynchronizowany na Twoim Dysku Google!', 3000);
+      }
+    }
+
+    async function syncToGoogleDrive() {
+      if (!gdriveToken || !gdriveFileId) return;
+      showSyncBanner('Zapisywanie na Dysku Google...');
+      try {
+        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${gdriveFileId}?uploadType=media`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${gdriveToken}`,
+            'Content-Type': 'application/json; charset=UTF-8'
+          },
+          body: JSON.stringify(episodes, null, 2)
+        });
+        showSyncBanner('Baza zsynchronizowana z Dyskiem Google!', 2500);
+      } catch (err) {
+        console.error('Błąd wysyłania zmian na Google Drive:', err);
+        showSyncBanner('Błąd wysyłania na Dysk Google. Zapisano lokalnie.', 3000);
+      }
+    }
+
+    function showSyncBanner(text, autoHideMs = null) {
+      const banner = document.getElementById('sync-notification');
+      const bannerText = document.getElementById('sync-notification-text');
+      bannerText.innerHTML = `<i class="fa-solid fa-cloud-arrow-up text-blue-600"></i> ${text}`;
+      banner.classList.remove('hidden');
+
+      if (autoHideMs) {
+        setTimeout(() => {
+          hideSyncBanner();
+        }, autoHideMs);
+      }
+    }
+
+    function hideSyncBanner() {
+      document.getElementById('sync-notification').classList.add('hidden');
+    }
+
+    function closeSyncNotification() {
+      hideSyncBanner();
+    }
+
+    /* ==========================================================================
+       4. SUBTITLE PARSER & CLEANER (.SRT and .ASS / .SSA)
+       ========================================================================== */
+    function cleanSubtitles(rawText) {
+      if (!rawText || !rawText.trim()) return '';
+
+      // Check if ASS / SSA file
+      if (rawText.includes('[Script Info]') || rawText.includes('Dialogue:')) {
+        return cleanASSSubtitles(rawText);
+      }
+      // Otherwise parse as SRT / standard cues
+      return cleanSRTSubtitles(rawText);
+    }
+
+    function cleanSRTSubtitles(text) {
+      const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+      const cleanLines = [];
+      const timestampRegex = /\d{1,2}:\d{2}:\d{2}[,.]\d{3}\s*-->\s*\d{1,2}:\d{2}:\d{2}[,.]\d{3}/;
+      const indexRegex = /^\d+$/;
+
+      let lastLine = '';
+
+      for (let rawLine of lines) {
+        let line = rawLine.trim();
+        if (!line) continue;
+        if (indexRegex.test(line)) continue;
+        if (timestampRegex.test(line)) continue;
+
+        // Strip HTML tags like <i>, <b>, <font color="...">
+        line = line.replace(/<[^>]+>/g, '').trim();
+        // Strip subtitle positional braces if any
+        line = line.replace(/\{[^}]*\}/g, '').trim();
+
+        if (!line) continue;
+
+        // Deduplicate consecutive identical lines (common in staggered animated captions)
+        if (line.toLowerCase() === lastLine.toLowerCase()) continue;
+
+        cleanLines.push(line);
+        lastLine = line;
+      }
+
+      return assembleParagraphs(cleanLines);
+    }
+
+    function cleanASSSubtitles(text) {
+      const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+      const dialogueLines = [];
+      let lastLine = '';
+
+      for (let rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line.startsWith('Dialogue:')) continue;
+
+        // Dialogue line format: Dialogue: Marked, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+        const colonIndex = line.indexOf(':');
+        const contentAfterColon = line.substring(colonIndex + 1);
+        const parts = contentAfterColon.split(',');
+
+        if (parts.length >= 10) {
+          // Subtitle text is everything from the 9th comma onwards
+          let subText = parts.slice(9).join(',').trim();
+
+          // Remove ASS styling tags: {\pos(x,y)}, {ad(a,b)}, {1}, {\k50}, etc.
+          subText = subText.replace(/\{[^}]*\}/g, '');
+          // Replace ASS newline markers
+          subText = subText.replace(/\\[Nn]/g, ' ').replace(/\\h/g, ' ');
+          // Strip any residual HTML
+          subText = subText.replace(/<[^>]+>/g, '').trim();
+
+          if (!subText) continue;
+          if (subText.toLowerCase() === lastLine.toLowerCase()) continue;
+
+          dialogueLines.push(subText);
+          lastLine = subText;
+        }
+      }
+
+      return assembleParagraphs(dialogueLines);
+    }
+
+    function assembleParagraphs(lines) {
+      if (!lines || lines.length === 0) return '';
+      let result = '';
+      let currentSentence = '';
+
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+        if (currentSentence) {
+          currentSentence += ' ' + line;
+        } else {
+          currentSentence = line;
+        }
+
+        // Add paragraph break after strong punctuation
+        if (/[.!?]$/.test(line)) {
+          result += currentSentence + '\n\n';
+          currentSentence = '';
+        }
+      }
+
+      if (currentSentence) {
+        result += currentSentence;
+      }
+
+      return result.trim();
+    }
+
+    function handleSubtitleUpload(event, targetElementId) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const rawContent = e.target.result;
+        const cleaned = cleanSubtitles(rawContent);
+        const target = document.getElementById(targetElementId);
+        if (target) {
+          target.value = cleaned;
+          // Trigger word count updates
+          if (targetElementId === 'chk-script') {
+            updateWordCount('chk-script', 'chk-word-count');
+          } else if (targetElementId === 'form-script') {
+            updateWordCount('form-script', 'form-word-count');
+          }
+        }
+      };
+      reader.readAsText(file);
+      // Reset input so re-selecting same file triggers change
+      event.target.value = '';
+    }
+
+    function updateWordCount(textareaId, counterId) {
+      const el = document.getElementById(textareaId);
+      const counter = document.getElementById(counterId);
+      if (!el || !counter) return;
+
+      const text = el.value.trim();
+      const words = text ? text.split(/\s+/).length : 0;
+      counter.textContent = `${words} słów`;
+    }
+
+    /* ==========================================================================
+       5. FORMAT TOGGLES (16:9 vs 9:16 SHORTS)
+       ========================================================================== */
+    function setCheckerFormat(fmt) {
+      document.getElementById('chk-format-val').value = fmt;
+      const isShorts = (fmt === 'shorts');
+      document.getElementById('chk-is-shorts-box').checked = isShorts;
+
+      const btnStd = document.getElementById('chk-fmt-std');
+      const btnSh = document.getElementById('chk-fmt-sh');
+
+      if (isShorts) {
+        btnSh.className = "flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 text-xs font-bold transition-all border-amber-600 bg-amber-50 text-amber-900";
+        btnStd.className = "flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 text-xs font-bold transition-all border-slate-200 bg-white text-slate-600 hover:border-slate-300";
+      } else {
+        btnStd.className = "flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 text-xs font-bold transition-all border-brand-600 bg-brand-50 text-brand-900";
+        btnSh.className = "flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 text-xs font-bold transition-all border-slate-200 bg-white text-slate-600 hover:border-slate-300";
+      }
+    }
+
+    function toggleCheckerShortsCheckbox(isChecked) {
+      setCheckerFormat(isChecked ? 'shorts' : 'standard');
+    }
+
+    function setFormFormat(fmt) {
+      document.getElementById('form-format').value = fmt;
+      const isShorts = (fmt === 'shorts');
+      document.getElementById('form-is-shorts-box').checked = isShorts;
+
+      const btnStd = document.getElementById('form-fmt-std');
+      const btnSh = document.getElementById('form-fmt-sh');
+
+      if (isShorts) {
+        btnSh.className = "py-1.5 px-2 rounded-lg text-xs font-bold border-2 border-amber-600 bg-amber-50 text-amber-900 flex items-center justify-center gap-1";
+        btnStd.className = "py-1.5 px-2 rounded-lg text-xs font-bold border-2 border-slate-200 bg-white text-slate-600 flex items-center justify-center gap-1";
+      } else {
+        btnStd.className = "py-1.5 px-2 rounded-lg text-xs font-bold border-2 border-brand-600 bg-brand-50 text-brand-900 flex items-center justify-center gap-1";
+        btnSh.className = "py-1.5 px-2 rounded-lg text-xs font-bold border-2 border-slate-200 bg-white text-slate-600 flex items-center justify-center gap-1";
+      }
+    }
+
+    function toggleFormShortsCheckbox(isChecked) {
+      setFormFormat(isChecked ? 'shorts' : 'standard');
+    }
+
+    /* ==========================================================================
+       6. NLP SIMILARITY & DUPLICATE CHECKER ENGINE
+       ========================================================================== */
+    function tokenize(text) {
+      if (!text) return [];
+      return text
+        .toLowerCase()
+        .replace(/[^a-ząćęłńóśźż0-9\s]/gi, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 2 && !POLISH_STOPWORDS.has(word));
+    }
+
+    function getWordFreq(tokens) {
+      const freq = {};
+      tokens.forEach(w => freq[w] = (freq[w] || 0) + 1);
+      return freq;
+    }
+
+    function cosineSimilarity(freqA, freqB) {
+      const words = new Set([...Object.keys(freqA), ...Object.keys(freqB)]);
+      let dotProduct = 0;
+      let magA = 0;
+      let magB = 0;
+
+      words.forEach(w => {
+        const a = freqA[w] || 0;
+        const b = freqB[w] || 0;
+        dotProduct += a * b;
+        magA += a * a;
+        magB += b * b;
+      });
+
+      if (magA === 0 || magB === 0) return 0;
+      return dotProduct / (Math.sqrt(magA) * Math.sqrt(magB));
+    }
+
+    function jaccardSimilarity(tokensA, tokensB) {
+      const setA = new Set(tokensA);
+      const setB = new Set(tokensB);
+      if (setA.size === 0 && setB.size === 0) return 0;
+
+      let intersection = 0;
+      setA.forEach(w => {
+        if (setB.has(w)) intersection++;
+      });
+      const union = new Set([...setA, ...setB]).size;
+      return union === 0 ? 0 : intersection / union;
+    }
+
+    function runAudit() {
+      const title = document.getElementById('chk-title').value.trim();
+      const script = document.getElementById('chk-script').value.trim();
+      const currentFmt = document.getElementById('chk-format-val').value; // 'standard' or 'shorts'
+      const scope = document.getElementById('chk-scope').value;
+
+      if (!title && !script) {
+        alert('Podaj przynajmniej tytuł lub wklej skrypt do sprawdzenia!');
+        return;
+      }
+
+      if (episodes.length === 0) {
+        alert('Twoja baza odcinków jest pusta! Załaduj przykłady demo lub dodaj wcześniejsze filmy, aby algorytm miał z czym porównać materiał.');
+        return;
+      }
+
+      const inputTokens = [...tokenize(title), ...tokenize(script)];
+      const inputFreq = getWordFreq(inputTokens);
+
+      let pool = episodes;
+      if (scope === 'same-format') {
+        pool = episodes.filter(e => e.format === currentFmt);
+      } else if (scope === 'cross-format') {
+        pool = episodes.filter(e => e.format !== currentFmt);
+      }
+
+      if (pool.length === 0) {
+        alert('Brak odcinków spełniających wybrane kryterium zakresu formatów.');
+        return;
+      }
+
+      const results = pool.map(ep => {
+        const epTokens = [...tokenize(ep.title), ...(ep.tags || []).map(t => t.toLowerCase()), ...tokenize(ep.script)];
+        const epFreq = getWordFreq(epTokens);
+
+        const cosSim = cosineSimilarity(inputFreq, epFreq);
+        const jacSim = jaccardSimilarity(inputTokens, epTokens);
+
+        // Combined score with title boost
+        const titleTokens = tokenize(title);
+        const epTitleTokens = tokenize(ep.title);
+        const titleJac = jaccardSimilarity(titleTokens, epTitleTokens);
+
+        const totalScore = Math.min(100, Math.round(((cosSim * 0.5) + (jacSim * 0.25) + (titleJac * 0.25)) * 100));
+
+        // Shared key terms
+        const sharedTerms = Object.keys(inputFreq).filter(w => epFreq[w]);
+
+        return {
+          episode: ep,
+          score: totalScore,
+          sharedTerms: sharedTerms.slice(0, 5)
+        };
+      });
+
+      results.sort((a, b) => b.score - a.score);
+
+      displayAuditResults(results, currentFmt);
+    }
+
+    function displayAuditResults(results, currentFmt) {
+      document.getElementById('audit-initial-placeholder').classList.add('hidden');
+      const resultsCard = document.getElementById('audit-results-card');
+      resultsCard.classList.remove('hidden');
+
+      const topMatch = results[0];
+      const maxScore = topMatch ? topMatch.score : 0;
+      const verdictBox = document.getElementById('audit-verdict-box');
+      const recommendationText = document.getElementById('audit-recommendation-text');
+
+      // Determine cannibalization & recycling context
+      let verdictClass = '';
+      let verdictIcon = '';
+      let verdictTitle = '';
+      let verdictDesc = '';
+
+      if (maxScore < 25) {
+        verdictClass = 'bg-emerald-50 border-emerald-200 text-emerald-950';
+        verdictIcon = '<i class="fa-solid fa-circle-check text-emerald-600 text-2xl"></i>';
+        verdictTitle = 'Zielone światło: Wysoka unikalność tematu (' + maxScore + '% zbieżności)';
+        verdictDesc = 'Nie znaleziono bezpośredniego odpowiednika w Twojej bazie. Temat jest świeży i bezpieczny do realizacji.';
+        recommendationText.textContent = 'Możesz śmiało realizować ten materiał. Skup się na mocnym zdefiniowaniu pojęć i podaniu praktycznych ćwiczeń.';
+      } else if (maxScore < 55) {
+        verdictClass = 'bg-amber-50 border-amber-200 text-amber-950';
+        verdictIcon = '<i class="fa-solid fa-triangle-exclamation text-amber-600 text-2xl"></i>';
+        verdictTitle = 'Umiarkowane podobieństwo (' + maxScore + '% zbieżności)';
+        
+        // Format-specific guidance
+        if (topMatch.episode.format !== currentFmt) {
+          if (currentFmt === 'shorts') {
+            verdictTitle = 'Świetna okazja na RECYKLING: Film 16:9 ➔ Shorts 9:16';
+            verdictDesc = `Masz już pełny odcinek o podobnej tematyce („${topMatch.episode.title}”). Ten Short doskonale sprawdzi się jako zwięzła esencja odsyłająca widzów do głównego materiału!`;
+            recommendationText.textContent = 'Skup się na jednym, 30-sekundowym argumencie. Zastosuj hook wizualny w pierwszych 3 sekundach i dodaj na końcu CTA: „Więcej wyjaśniam w pełnym filmie na kanale”.';
+          } else {
+            verdictTitle = 'Okazja na POGŁĘBIENIE: Shorts 9:16 ➔ Film 16:9';
+            verdictDesc = `Opublikowano już krótkiego Shorta na ten temat („${topMatch.episode.title}”). Tworzony materiał 16:9 pozwoli na dogłębne przedstawienie mechanizmów psychologicznych.`;
+            recommendationText.textContent = 'Rozwiń treść o konkretne protokoły terapeutyczne (np. ACT/CBT), neurobiologię układu nerwowego lub analizę studium przypadku pacjenta.';
+          }
+        } else {
+          verdictDesc = `Temat częściowo pokrywa się z filmem „${topMatch.episode.title}”. Warto zmienić kąt narracji, by nie powielać wniosków.`;
+          recommendationText.textContent = 'Rekomendacja: Zmień perspektywę (np. zamiast ogólnej teorii przedstaw somatykę i ćwiczenia regulacji nerwu błędnego lub perspektywę drugiej osoby w relacji).';
+        }
+      } else {
+        verdictClass = 'bg-rose-50 border-rose-200 text-rose-950';
+        verdictIcon = '<i class="fa-solid fa-ban text-rose-600 text-2xl"></i>';
+
+        if (topMatch.episode.format === currentFmt) {
+          verdictTitle = 'Wysokie ryzyko kanibalizacji (' + maxScore + '% zbieżności)';
+          verdictDesc = `Treść jest bardzo zbliżona do istniejącego filmu w tym samym formacie: „${topMatch.episode.title}”. Publikacja w tej formie może podzielić ruch i zdezorientować algorytm YouTube.`;
+          recommendationText.textContent = 'Zdecydowanie odradzamy powielanie tych samych tez. Skonfrontuj powszechne mity na ten temat lub połącz to zagadnienie z zupełnie inną dziedziną psychologii.';
+        } else {
+          verdictTitle = 'Duże pokrycie treści (' + maxScore + '% zbieżności)';
+          verdictDesc = `Duża zbieżność z materiałem „${topMatch.episode.title}” w innym formacie.`;
+          recommendationText.textContent = 'Upewnij się, że nie czytasz tego samego skryptu – dostosuj tempo i strukturę do wybranego formatu wideo.';
+        }
+      }
+
+      verdictBox.className = `p-5 rounded-3xl border ${verdictClass} transition-all`;
+      verdictBox.innerHTML = `
+        <div class="flex items-start gap-3">
+          ${verdictIcon}
+          <div>
+            <h4 class="text-sm font-bold">${verdictTitle}</h4>
+            <p class="text-xs mt-1 leading-relaxed opacity-90">${verdictDesc}</p>
+          </div>
+        </div>
+      `;
+
+      // Render top matches
+      const matchesList = document.getElementById('audit-matches-list');
+      matchesList.innerHTML = '';
+      document.getElementById('audit-matches-count').textContent = `sprawdzono ${results.length} pozycji`;
+
+      results.slice(0, 3).forEach(item => {
+        const isShort = item.episode.format === 'shorts';
+        const badgeColor = isShort ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-blue-100 text-blue-800 border-blue-200';
+        const badgeIcon = isShort ? 'fa-mobile-screen' : 'fa-tv';
+        const badgeLabel = isShort ? 'Shorts 9:16' : 'Film 16:9';
+
+        const matchEl = document.createElement('div');
+        matchEl.className = 'p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start justify-between gap-3 text-xs';
+        matchEl.innerHTML = `
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border ${badgeColor}">
+                <i class="fa-solid ${badgeIcon}"></i> ${badgeLabel}
+              </span>
+              <span class="text-[11px] font-semibold text-slate-500">${item.episode.category || 'Ogólna'}</span>
+            </div>
+            <h5 class="font-bold text-slate-900">${item.episode.title}</h5>
+            ${item.sharedTerms.length > 0 ? `
+              <p class="text-[11px] text-slate-500">Wspólne pojęcia: <span class="font-medium text-slate-700">${item.sharedTerms.join(', ')}</span></p>
+            ` : ''}
+          </div>
+          <div class="text-right shrink-0">
+            <span class="text-sm font-black ${item.score > 50 ? 'text-rose-600' : item.score > 25 ? 'text-amber-600' : 'text-emerald-600'}">${item.score}%</span>
+            <p class="text-[9px] text-slate-400 font-semibold uppercase">zbieżność</p>
+          </div>
+        `;
+        matchesList.appendChild(matchEl);
+      });
+    }
+
+    function clearCheckerForm() {
+      document.getElementById('chk-title').value = '';
+      document.getElementById('chk-script').value = '';
+      document.getElementById('chk-word-count').textContent = '0 słów';
+      document.getElementById('audit-initial-placeholder').classList.remove('hidden');
+      document.getElementById('audit-results-card').classList.add('hidden');
+    }
+
+    /* ==========================================================================
+       7. EPISODES LIBRARY RENDERING & MANAGEMENT
+       ========================================================================== */
+    function renderEpisodesTable() {
+      const container = document.getElementById('episodes-container');
+      const emptyState = document.getElementById('episodes-empty-state');
+      const search = (document.getElementById('library-search').value || '').toLowerCase();
+      const catFilter = document.getElementById('filter-category').value;
+
+      let filtered = episodes.filter(ep => {
+        const matchesFmt = (currentFilterFormat === 'all') || (ep.format === currentFilterFormat);
+        const matchesCat = (catFilter === 'all') || (ep.category === catFilter);
+        const matchesSearch = !search ||
+          ep.title.toLowerCase().includes(search) ||
+          (ep.tags && ep.tags.some(t => t.toLowerCase().includes(search))) ||
+          (ep.script && ep.script.toLowerCase().includes(search));
+
+        return matchesFmt && matchesCat && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      container.innerHTML = '';
+
+      filtered.forEach(ep => {
+        const isShort = ep.format === 'shorts';
+        const fmtBadgeClass = isShort ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-brand-50 text-brand-800 border-brand-200';
+        const fmtIcon = isShort ? 'fa-mobile-screen' : 'fa-tv';
+        const fmtLabel = isShort ? 'Shorts 9:16' : 'Film 16:9';
+        const words = ep.script ? ep.script.trim().split(/\s+/).length : 0;
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-3xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3';
+        card.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-lg border ${fmtBadgeClass}">
+                <i class="fa-solid ${fmtIcon}"></i> ${fmtLabel}
+              </span>
+              <span class="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                ${ep.category || 'Psychologia'}
+              </span>
+            </div>
+            <h4 class="text-sm font-bold text-slate-900 leading-snug">${ep.title}</h4>
+            <p class="text-xs text-slate-500 line-clamp-3 leading-relaxed">${ep.script || 'Brak treści skryptu.'}</p>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span class="text-[11px] text-slate-400 font-medium">
+              <i class="fa-solid fa-align-left mr-1"></i> ${words} słów
+            </span>
+            <div class="flex items-center gap-1">
+              <button onclick="editEpisode('${ep.id}')" class="p-1.5 text-slate-400 hover:text-brand-600 rounded-lg hover:bg-slate-100 transition-colors" title="Edytuj">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button onclick="deleteEpisode('${ep.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition-colors" title="Usuń">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterFormat(fmt) {
+      currentFilterFormat = fmt;
+      ['all', 'std', 'sh'].forEach(k => {
+        const btn = document.getElementById(`filter-fmt-${k}`);
+        if (k === 'all' && fmt === 'all') btn.className = 'px-2.5 py-1 rounded-lg bg-white text-slate-800 shadow-xs';
+        else if (k === 'std' && fmt === 'standard') btn.className = 'px-2.5 py-1 rounded-lg bg-white text-slate-800 shadow-xs';
+        else if (k === 'sh' && fmt === 'shorts') btn.className = 'px-2.5 py-1 rounded-lg bg-white text-slate-800 shadow-xs';
+        else btn.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-800';
+      });
+      renderEpisodesTable();
+    }
+
+    function saveEpisodeForm() {
+      const id = document.getElementById('form-edit-id').value;
+      const title = document.getElementById('form-title').value.trim();
+      const format = document.getElementById('form-format').value;
+      const category = document.getElementById('form-category').value;
+      const tagsStr = document.getElementById('form-tags').value;
+      const script = document.getElementById('form-script').value.trim();
+
+      if (!title) {
+        alert('Podaj tytuł odcinka!');
+        return;
+      }
+
+      const tags = tagsStr.split(',').map(t => t.trim()).filter(Boolean);
+
+      if (id) {
+        const index = episodes.findIndex(e => e.id === id);
+        if (index !== -1) {
+          episodes[index] = { ...episodes[index], title, format, category, tags, script, updatedAt: new Date().toISOString() };
+        }
+      } else {
+        const newEp = {
+          id: 'ep_' + Date.now(),
+          title,
+          format,
+          category,
+          tags,
+          script,
+          createdAt: new Date().toISOString()
+        };
+        episodes.unshift(newEp);
+      }
+
+      saveLocalEpisodes();
+      renderEpisodesTable();
+      closeModal('add-episode-modal');
+      resetEpisodeForm();
+    }
+
+    function editEpisode(id) {
+      const ep = episodes.find(e => e.id === id);
+      if (!ep) return;
+
+      document.getElementById('modal-episode-title').textContent = 'Edytuj odcinek';
+      document.getElementById('form-edit-id').value = ep.id;
+      document.getElementById('form-title').value = ep.title;
+      document.getElementById('form-category').value = ep.category || 'Trauma i Relacje';
+      document.getElementById('form-tags').value = (ep.tags || []).join(', ');
+      document.getElementById('form-script').value = ep.script || '';
+      setFormFormat(ep.format || 'standard');
+      updateWordCount('form-script', 'form-word-count');
+
+      openModal('add-episode-modal');
+    }
+
+    function deleteEpisode(id) {
+      if (!confirm('Czy na pewno chcesz usunąć ten odcinek z bazy?')) return;
+      episodes = episodes.filter(e => e.id !== id);
+      saveLocalEpisodes();
+      renderEpisodesTable();
+    }
+
+    function resetEpisodeForm() {
+      document.getElementById('modal-episode-title').textContent = 'Dodaj nowy odcinek do bazy';
+      document.getElementById('form-edit-id').value = '';
+      document.getElementById('form-title').value = '';
+      document.getElementById('form-tags').value = '';
+      document.getElementById('form-script').value = '';
+      setFormFormat('standard');
+      updateWordCount('form-script', 'form-word-count');
+    }
+
+    /* ==========================================================================
+       8. BACKUP, EXPORT & DEMO DATA
+       ========================================================================== */
+    function exportDataJSON() {
+      const blob = new Blob([JSON.stringify(episodes, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `baza_odcinkow_psychologia_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportDataCSV() {
+      const headers = ['ID', 'Tytul', 'Format', 'Kategoria', 'Tagi', 'Skrypt'];
+      const rows = episodes.map(e => [
+        e.id,
+        `"${(e.title || '').replace(/"/g, '""')}"`,
+        e.format,
+        `"${(e.category || '').replace(/"/g, '""')}"`,
+        `"${(e.tags || []).join('; ').replace(/"/g, '""')}"`,
+        `"${(e.script || '').replace(/"/g, '""')}"`
+      ]);
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `baza_odcinkow_psychologia_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importDataJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (Array.isArray(parsed)) {
+            if (confirm(`Wczytano ${parsed.length} odcinków z pliku. Czy chcesz zastąpić bieżącą bazę?`)) {
+              episodes = parsed;
+              saveLocalEpisodes();
+              renderEpisodesTable();
+              alert('Baza została pomyślnie zaimportowana!');
+            }
+          } else {
+            alert('Niepoprawny format pliku JSON.');
+          }
+        } catch (err) {
+          alert('Błąd podczas parsowania pliku JSON: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function loadDemoData(render = true) {
+      episodes = [
+        {
+          id: 'ep_1',
+          title: 'Trauma bonding: Dlaczego tak trudno odejść z toksycznej relacji?',
+          format: 'standard',
+          category: 'Trauma i Relacje',
+          tags: ['trauma bonding', 'więź z traumy', 'uzależnienie biochemiczne', 'dopamina', 'kortyzol', 'cykl przemocy'],
+          script: 'Czy zastanawiałeś się kiedyś, dlaczego im bardziej ktoś Cię rani, tym silniej czujesz potrzebę bycia blisko tej osoby? To nie jest miłość, lecz trauma bonding – potężne biochemiczne uzależnienie układu nerwowego od cyklu nagrody i kary. Gdy partner naprzemiennie funduje Ci raj i piekło, Twój mózg reaguje wyrzutami dopaminy przy każdym pojednaniu. Działa to dokładnie tak samo jak mechanizm hazardowy. W tym filmie omówimy neurobiologię więzi z traumy oraz 4 konkretne kroki somatyczne, by odzyskać autonomię emocjonalną.'
+        },
+        {
+          id: 'ep_2',
+          title: 'Dlaczego tkwisz w toksycznej relacji? 3 sekundy prawdy',
+          format: 'shorts',
+          category: 'Trauma i Relacje',
+          tags: ['trauma bonding', 'shorts', 'toksyczny zwiazek', 'dopamina'],
+          script: 'To nie jest miłość, to dopaminowa ruletka. Jeśli w Twoim związku po awanturze następuje miesiąc miodowy, Twój mózg nie kocha – Twój mózg jest uzależniony od ulgi po odrzuceniu. Przestań tłumaczyć toksyczne zachowania nadzieją na zmianę.'
+        },
+        {
+          id: 'ep_3',
+          title: 'Teoria poliwagalna: Jak zresetować układ nerwowy w 90 sekund?',
+          format: 'standard',
+          category: 'Układ Nerwowy i Somatyka',
+          tags: ['teoria poliwagalna', 'nerw błędny', 'regulacja układu nerwowego', 'ventral vagal', 'fight or flight', 'freeze'],
+          script: 'Kiedy poziom stresu przekracza Twoje zasoby, logiczne myślenie w korze przedczołowej zostaje odcięte. Wchodzisz w stan walki, ucieczki lub zamrożenia (tzw. stan grzbietowy nerwu błędnego). Zamiast próbować racjonalizować emocje w głowie, musimy wysłać sygnał bezpieczeństwa od dołu do góry – przez ciało. Pokażę Ci trzy techniki stymulacji gałęzi brzusznej nerwu błędnego: wydłużony wydech z wibracją, ruch gałek ocznych i nacisk proprioceptywny.'
+        },
+        {
+          id: 'ep_4',
+          title: 'Gaslighting: 5 zdań, którymi manipulator podważa Twoje zmysły',
+          format: 'standard',
+          category: 'Manipulacja i Narcyzm',
+          tags: ['gaslighting', 'manipulacja', 'narcyzm', 'zwątpienie w siebie', 'przemoc psychiczna'],
+          script: '„Jesteś przewrażliwiona”, „Nigdy czegoś takiego nie powiedziałem”, „Wszyscy widzą, że masz problem z pamięcią”. Gaslighting to jedna z najbardziej destrukcyjnych form manipulacji psychologicznej, której celem jest sprawienie, byś przestał ufać własnej percepcji rzeczywistości. W dzisiejszym odcinku rozłożymy na czynniki pierwsze mechanizm obronny reality testing i nauczymy się, jak stawiać niepodważalne granice bez wchodzenia w jałowe dyskusje.'
+        },
+        {
+          id: 'ep_5',
+          title: 'Styl lękowy w miłości: Jak przestać panikować, gdy partner nie odpisuje?',
+          format: 'standard',
+          category: 'Trauma i Relacje',
+          tags: ['styl lękowy', 'teoria przywiązania', 'anxious attachment', 'nadopiekuńczość', 'regulacja emocji'],
+          script: 'Wysyłasz wiadomość. Mijają 24 minuty. Brak odpowiedzi. Twój żołądek się ściska, w głowie pojawia się natychmiastowy scenariusz odrzucenia. To aktywacja stylu przywiązania lękowo-ambiwalentnego. Osoby o tym stylu mają nadwrażliwy system wykrywania zagrożenia w relacji. Nauczymy się dzisiaj rozróżniać rzeczywiste sygnały ostrzegawcze od fałszywych alarmów Twojego wewnętrznego dziecka.'
+        },
+        {
+          id: 'ep_6',
+          title: '3 zdania gaslightera, na które musisz uważać',
+          format: 'shorts',
+          category: 'Manipulacja i Narcyzm',
+          tags: ['gaslighting', 'shorts', 'manipulacja', 'narcyz'],
+          script: 'Gdy słyszysz: „Wymyślasz to sobie”, „Tylko żartowałem, nie znasz się na żartach” albo „Przez Twoją histerię wszystko psujesz” – to nie jest niewinna uwaga. To gaslighting. Twoja percepcja jest prawidłowa. Zapisz tego Shorta na później.'
+        }
+      ];
+
+      saveLocalEpisodes();
+      if (render) renderEpisodesTable();
+    }
+
+    /* ==========================================================================
+       9. UI NAVIGATION & MODALS
+       ========================================================================== */
+    function switchTab(tab) {
+      const viewLibrary = document.getElementById('view-library');
+      const viewChecker = document.getElementById('view-checker');
+      const btnLib = document.getElementById('nav-btn-library');
+      const btnChk = document.getElementById('nav-btn-checker');
+      const mobLib = document.getElementById('mob-nav-library');
+      const mobChk = document.getElementById('mob-nav-checker');
+
+      if (tab === 'library') {
+        viewLibrary.classList.remove('hidden');
+        viewChecker.classList.add('hidden');
+        btnLib.className = 'py-1.5 px-3.5 rounded-lg bg-white text-slate-900 shadow-sm transition-all flex items-center gap-2';
+        btnChk.className = 'py-1.5 px-3.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center gap-2';
+        mobLib.className = 'py-1 px-3 rounded-lg text-brand-700 font-bold flex items-center gap-1.5';
+        mobChk.className = 'py-1 px-3 rounded-lg text-slate-600 flex items-center gap-1.5';
+        renderEpisodesTable();
+      } else {
+        viewLibrary.classList.add('hidden');
+        viewChecker.classList.remove('hidden');
+        btnChk.className = 'py-1.5 px-3.5 rounded-lg bg-white text-slate-900 shadow-sm transition-all flex items-center gap-2';
+        btnLib.className = 'py-1.5 px-3.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center gap-2';
+        mobChk.className = 'py-1 px-3 rounded-lg text-amber-700 font-bold flex items-center gap-1.5';
+        mobLib.className = 'py-1 px-3 rounded-lg text-slate-600 flex items-center gap-1.5';
+      }
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
