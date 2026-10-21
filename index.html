@@ -532,6 +532,113 @@
     </div>
   </div>
 
+  
+  <!-- =============================================================== -->
+  <!-- MODAL: DETAILED SIMILARITY & TEXT HIGHLIGHT COMPARISON         -->
+  <!-- =============================================================== -->
+  <div id="comparison-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-white rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-lg font-black shrink-0">
+            <span id="cmp-score-badge">0%</span>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+              <span>Szczegółowa Analiza Podobieństwa</span>
+              <span id="cmp-verdict-pill" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700"></span>
+            </h3>
+            <p class="text-xs text-slate-500">Porównanie nowego skryptu z materiałem z Twojej bazy</p>
+          </div>
+        </div>
+        <button onclick="closeModal('comparison-modal')" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">&times;</button>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="p-6 overflow-y-auto custom-scroll space-y-6 flex-1 text-xs">
+        
+        <!-- Explanation Box: Why was this flagged? -->
+        <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-3">
+          <h4 class="font-bold text-amber-950 flex items-center gap-2 text-xs sm:text-sm">
+            <i class="fa-solid fa-magnifying-glass-chart text-amber-600"></i> Dlaczego algorytm to zaznaczył jako podobieństwo?
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-amber-200/50 space-y-1">
+              <span class="font-bold text-slate-700 flex items-center gap-1.5 text-[11px]">
+                <i class="fa-solid fa-heading text-brand-600"></i> Zbieżność tezy / tytułu
+              </span>
+              <p id="cmp-title-analysis" class="text-slate-600 text-[11px] leading-relaxed"></p>
+            </div>
+
+            <div class="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-amber-200/50 space-y-1">
+              <span class="font-bold text-slate-700 flex items-center gap-1.5 text-[11px]">
+                <i class="fa-solid fa-brain text-purple-600"></i> Wykryte pojęcia psychologiczne
+              </span>
+              <div id="cmp-concepts-list" class="flex flex-wrap gap-1 pt-0.5"></div>
+            </div>
+
+            <div class="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-amber-200/50 space-y-1">
+              <span class="font-bold text-slate-700 flex items-center gap-1.5 text-[11px]">
+                <i class="fa-solid fa-layer-group text-blue-600"></i> Relacja formatów i strategia
+              </span>
+              <p id="cmp-format-strategy" class="text-slate-600 text-[11px] leading-relaxed"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Side-by-Side Highlighted Scripts Comparison -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2">
+              <i class="fa-solid fa-highlighter text-amber-500"></i> Porównanie treści tekstów (podświetlone wspólne elementy)
+            </h4>
+            <span class="text-[10px] text-slate-400 font-medium">Żółty marker = pokrywające się frazy i pojęcia</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Left: New Draft Script -->
+            <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-2">
+              <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                <span class="font-bold text-slate-900 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-brand-500"></span> Twój weryfikowany materiał
+                </span>
+                <span id="cmp-new-format-pill" class="text-[10px] font-bold px-2 py-0.5 rounded-md border"></span>
+              </div>
+              <p id="cmp-new-title" class="font-bold text-slate-800 text-xs"></p>
+              <div id="cmp-new-body" class="bg-white border border-slate-200/80 rounded-xl p-3 max-h-72 overflow-y-auto custom-scroll text-slate-700 text-[11px] leading-relaxed whitespace-pre-line font-sans">
+                <!-- Highlighted new script -->
+              </div>
+            </div>
+
+            <!-- Right: Stored Episode Script -->
+            <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-2">
+              <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                <span class="font-bold text-slate-900 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-blue-500"></span> Istniejący film z bazy
+                </span>
+                <span id="cmp-old-format-pill" class="text-[10px] font-bold px-2 py-0.5 rounded-md border"></span>
+              </div>
+              <p id="cmp-old-title" class="font-bold text-slate-800 text-xs"></p>
+              <div id="cmp-old-body" class="bg-white border border-slate-200/80 rounded-xl p-3 max-h-72 overflow-y-auto custom-scroll text-slate-700 text-[11px] leading-relaxed whitespace-pre-line font-sans">
+                <!-- Highlighted existing script -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <span class="text-[11px] text-slate-400">Podpowiedź: Użyj tych informacji, by zmodyfikować wstęp (hook) lub zmienić perspektywę materiału.</span>
+        <button type="button" onclick="closeModal('comparison-modal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-colors">
+          Zamknij podgląd
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT APPLICATION LOGIC -->
   <script>
     /* ==========================================================================
@@ -1476,10 +1583,12 @@
       displayAuditResults(results, currentFmt);
     }
 
-    function displayAuditResults(results, currentFmt) {
+        function displayAuditResults(results, currentFmt) {
       document.getElementById('audit-initial-placeholder').classList.add('hidden');
       const resultsCard = document.getElementById('audit-results-card');
       resultsCard.classList.remove('hidden');
+
+      lastAuditResults = results;
 
       const topMatch = results[0];
       const maxScore = topMatch ? topMatch.score : 0;
@@ -1544,39 +1653,159 @@
         </div>
       `;
 
-      // Render top matches
+      // Render top matches with interactive click/hover comparison triggers
       const matchesList = document.getElementById('audit-matches-list');
       matchesList.innerHTML = '';
       document.getElementById('audit-matches-count').textContent = `sprawdzono ${results.length} pozycji`;
 
-      results.slice(0, 3).forEach(item => {
+      results.slice(0, 3).forEach((item, index) => {
         const isShort = item.episode.format === 'shorts';
         const badgeColor = isShort ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-blue-100 text-blue-800 border-blue-200';
         const badgeIcon = isShort ? 'fa-mobile-screen' : 'fa-tv';
         const badgeLabel = isShort ? 'Shorts 9:16' : 'Film 16:9';
 
         const matchEl = document.createElement('div');
-        matchEl.className = 'p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start justify-between gap-3 text-xs';
+        matchEl.className = 'group p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100/90 border border-slate-200 hover:border-brand-400 flex flex-col sm:flex-row items-stretch sm:items-start justify-between gap-3 text-xs cursor-pointer transition-all hover:shadow-md';
+        matchEl.onclick = () => inspectMatch(index);
+        matchEl.title = 'Kliknij, aby otworzyć szczegółowe porównanie tekstów i podświetlenia!';
+
         matchEl.innerHTML = `
-          <div class="space-y-1">
+          <div class="space-y-1.5 flex-1 min-w-0">
             <div class="flex items-center gap-2">
               <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border ${badgeColor}">
                 <i class="fa-solid ${badgeIcon}"></i> ${badgeLabel}
               </span>
               <span class="text-[11px] font-semibold text-slate-500">${item.episode.category || 'Ogólna'}</span>
             </div>
-            <h5 class="font-bold text-slate-900">${item.episode.title}</h5>
+            <h5 class="font-bold text-slate-900 group-hover:text-brand-700 transition-colors">${item.episode.title}</h5>
             ${item.sharedTerms.length > 0 ? `
-              <p class="text-[11px] text-slate-500">Wspólne pojęcia: <span class="font-medium text-slate-700">${item.sharedTerms.join(', ')}</span></p>
-            ` : ''}
+              <p class="text-[11px] text-slate-500">Wspólne pojęcia: <span class="font-medium text-slate-800">${item.sharedTerms.join(', ')}</span></p>
+            ` : '<p class="text-[11px] text-slate-400 italic">Zbieżność ogólna kontekstu tekstu.</p>'}
+            
+            <div>
+              <span class="inline-flex items-center gap-1.5 text-[10px] font-bold text-brand-700 bg-white group-hover:bg-brand-50 px-2 py-1 rounded-lg border border-slate-200 group-hover:border-brand-300 transition-all shadow-2xs mt-1">
+                <i class="fa-solid fa-highlighter text-amber-500"></i> Zobacz dlaczego (podświetl i porównaj teksty)
+              </span>
+            </div>
           </div>
-          <div class="text-right shrink-0">
-            <span class="text-sm font-black ${item.score > 50 ? 'text-rose-600' : item.score > 25 ? 'text-amber-600' : 'text-emerald-600'}">${item.score}%</span>
+
+          <div class="text-left sm:text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200/60">
+            <span class="text-base sm:text-lg font-black ${item.score > 50 ? 'text-rose-600' : item.score > 25 ? 'text-amber-600' : 'text-emerald-600'}">${item.score}%</span>
             <p class="text-[9px] text-slate-400 font-semibold uppercase">zbieżność</p>
           </div>
         `;
         matchesList.appendChild(matchEl);
       });
+    }
+
+
+    /* ==========================================================================
+       DETAILED MATCH INSPECTION & TEXT HIGHLIGHT COMPARISON
+       ========================================================================== */
+    let lastAuditResults = [];
+
+    function highlightText(text, terms) {
+      if (!text) return '<span class="text-slate-400 italic">Brak treści skryptu.</span>';
+      let safe = escapeHtml(text);
+      if (!terms || terms.length === 0) return safe;
+
+      // Sort terms by length descending to match multi-word phrases first
+      const sortedTerms = [...terms].sort((a, b) => b.length - a.length);
+
+      sortedTerms.forEach(term => {
+        if (!term || term.length < 3) return;
+        const escapedTerm = term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        // Word boundary check
+        const regex = new RegExp('(\\b' + escapedTerm + '\\b)', 'gi');
+        safe = safe.replace(regex, '<mark class="bg-amber-200 text-amber-950 font-bold px-1 py-0.5 rounded shadow-2xs">$1</mark>');
+      });
+
+      return safe;
+    }
+
+    function inspectMatch(index) {
+      if (!lastAuditResults || !lastAuditResults[index]) return;
+      const item = lastAuditResults[index];
+      const ep = item.episode;
+      const currentFmt = document.getElementById('chk-format-val').value;
+      const newTitle = document.getElementById('chk-title').value.trim() || 'Bez tytułu';
+      const newScript = document.getElementById('chk-script').value.trim() || '';
+
+      // 1. Header elements
+      document.getElementById('cmp-score-badge').textContent = `${item.score}%`;
+      const pill = document.getElementById('cmp-verdict-pill');
+      if (item.score >= 55) {
+        pill.textContent = 'Wysokie podobieństwo';
+        pill.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800';
+      } else if (item.score >= 25) {
+        pill.textContent = 'Umiarkowane podobieństwo';
+        pill.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800';
+      } else {
+        pill.textContent = 'Niskie podobieństwo';
+        pill.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
+      }
+
+      // 2. Explanation 1: Title analysis
+      const titleTokensNew = tokenize(newTitle);
+      const titleTokensOld = tokenize(ep.title);
+      const commonTitleTokens = titleTokensNew.filter(t => titleTokensOld.includes(t));
+      const titleAnalysisEl = document.getElementById('cmp-title-analysis');
+      if (commonTitleTokens.length > 0) {
+        titleAnalysisEl.innerHTML = `Tytuły bezpośrednio operują na tych samych słowach kluczowych: <span class="font-bold text-slate-900">${commonTitleTokens.join(', ')}</span>.`;
+      } else {
+        titleAnalysisEl.textContent = 'Tytuły mają różne sformułowania, ale ich treść merytoryczna bada zbliżony problem.';
+      }
+
+      // 3. Explanation 2: Concepts list
+      const conceptsListEl = document.getElementById('cmp-concepts-list');
+      conceptsListEl.innerHTML = '';
+      if (item.sharedTerms && item.sharedTerms.length > 0) {
+        item.sharedTerms.forEach(t => {
+          const badge = document.createElement('span');
+          badge.className = 'inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-50 text-purple-800 border border-purple-200';
+          badge.innerHTML = `<i class="fa-solid fa-tag text-[9px]"></i> ${escapeHtml(t)}`;
+          conceptsListEl.appendChild(badge);
+        });
+      } else {
+        conceptsListEl.innerHTML = '<span class="text-[11px] text-slate-400 italic">Brak pojedynczych pojęć klinicznych (zbieżność ogólna kontekstu).</span>';
+      }
+
+      // 4. Explanation 3: Format & Strategy
+      const strategyEl = document.getElementById('cmp-format-strategy');
+      const isNewShort = currentFmt === 'shorts';
+      const isOldShort = ep.format === 'shorts';
+
+      if (currentFmt === ep.format) {
+        if (isNewShort) {
+          strategyEl.innerHTML = `<span class="font-bold text-rose-700">Ryzyko Shorts ➔ Shorts:</span> Masz już krótką rolkę na ten temat. Zamiast powielać format, rozważ rozszerzenie go w pełny film 16:9.`;
+        } else {
+          strategyEl.innerHTML = `<span class="font-bold text-rose-700">Ryzyko Kanibalizacji 16:9:</span> Dwa pełne filmy o tym samym mogą konkurować o tych samych widzów. Skup się na innej perspektywie terapeutycznej.`;
+        }
+      } else {
+        if (isNewShort && !isOldShort) {
+          strategyEl.innerHTML = `<span class="font-bold text-amber-700">Recykling (16:9 ➔ Shorts):</span> Świetny ruch! Masz już długi film. Wyciągnij z niego esencję i 3-sekundowy hook, a na końcu odeślij do pełnego materiału.`;
+        } else {
+          strategyEl.innerHTML = `<span class="font-bold text-teal-700">Pogłębienie (Shorts ➔ 16:9):</span> Masz już krótką rolkę. To doskonała baza na pełnometrażowy przewodnik z ćwiczeniami i case study.`;
+        }
+      }
+
+      // 5. Populate and Highlight Scripts
+      const newPill = document.getElementById('cmp-new-format-pill');
+      newPill.textContent = isNewShort ? 'Shorts 9:16' : 'Film 16:9';
+      newPill.className = `text-[10px] font-bold px-2 py-0.5 rounded-md border ${isNewShort ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-brand-50 text-brand-800 border-brand-200'}`;
+
+      const oldPill = document.getElementById('cmp-old-format-pill');
+      oldPill.textContent = isOldShort ? 'Shorts 9:16' : 'Film 16:9';
+      oldPill.className = `text-[10px] font-bold px-2 py-0.5 rounded-md border ${isOldShort ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-blue-50 text-blue-800 border-blue-200'}`;
+
+      document.getElementById('cmp-new-title').textContent = newTitle;
+      document.getElementById('cmp-old-title').textContent = ep.title;
+
+      // Highlight in both texts
+      document.getElementById('cmp-new-body').innerHTML = highlightText(newScript, item.sharedTerms);
+      document.getElementById('cmp-old-body').innerHTML = highlightText(ep.script, item.sharedTerms);
+
+      openModal('comparison-modal');
     }
 
     function clearCheckerForm() {
